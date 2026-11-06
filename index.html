@@ -217,16 +217,16 @@ input,select,textarea{border:1px solid var(--line);border-radius:12px;padding:11
     <button class="arrow" id="prev" aria-label="前の週">‹</button>
     <div class="label" id="range"></div>
     <button class="arrow" id="next" aria-label="次の週">›</button>
-    <button class="btn small thisweek" id="today">今週</button>
+    <button class="btn small thisweek" id="today">今日</button>
   </div>
   <div class="tabs" id="tabs"></div>
-  <div class="legend">
-    <span><i class="lg-free"></i>空き</span>
-    <span><i class="lg-taken"></i>予約済み</span>
-    <span><i class="lg-mine"></i>自分の予約</span>
-    <span><i class="lg-sel"></i>選択中</span>
-  </div>
 </nav>
+<div class="legend" style="margin:0 0 10px">
+  <span><i class="lg-free"></i>空き</span>
+  <span><i class="lg-taken"></i>予約済み</span>
+  <span><i class="lg-mine"></i>自分の予約</span>
+  <span><i class="lg-sel"></i>選択中</span>
+</div>
 
 <div class="board"><div class="grid" id="days"></div></div>
 
