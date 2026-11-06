@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>D-kuts 練習場所予約</title>
+<meta name="description" content="D-kutsの練習場所（手前・真ん中・奥）の予約表。空き状況の確認と予約ができます。">
+<meta property="og:title" content="D-kuts 練習場所予約">
+<meta property="og:description" content="手前・真ん中・奥の空き状況を見て、そのまま予約できます。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#252c44">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23252c44'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
 <script>
 // LINEのブラウザではGoogleログインができないので、ふつうのブラウザで開き直す
 (function(){
@@ -13,237 +19,298 @@
   }
 })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ===== 色と文字（ライト） ===== */
 :root{
-  --bg:#f5f6fa; --panel:#ffffff; --ink:#20232a; --muted:#697386; --line:#e3e6ee; --cell:#edf0f5; --head:#f0f3f9;
-  --btn-line:#cbd2df; --primary:#252c44; --primary-ink:#ffffff; --today:#e0461f;
-  --free-bg:#e8f4ed; --free-line:#b9dfc8; --free-ink:#185d36;
-  --busy-bg:#fff0e8; --busy-line:#f3c5a9; --busy-ink:#86431d;
-  --mine-bg:#eceaff; --mine-line:#c9c1ff; --mine-ink:#44358b;
-  --sel-bg:#252c44; --sel-ink:#ffffff;
-  --block-bg:#eceef2; --block-ink:#7c8494;
-  --notice-bg:#fff8e5; --notice-ink:#795d17; --err-bg:#fde9e7; --err-ink:#9b2c1f; --ok-bg:#1e6b43; --ok-ink:#ffffff;
+  --bg:#eef1f7; --surface:#ffffff; --raise:#f7f8fc; --ink:#161b33; --muted:#5f6884; --faint:#9aa2ba; --line:#dfe3ee;
+  --free:#f1faf4; --free-line:#9fd4b2; --free-ink:#1d7a45;
+  --taken:#e3e7f1; --taken-ink:#2b3254; --crew:#d9deec;
+  --mine:#5b3fd6; --mine-ink:#ffffff;
+  --sel:#ede8ff; --sel-line:#5b3fd6; --sel-ink:#3f28a8;
+  --amber:#e59400; --amber-soft:#fff3d6;
+  --danger:#c0392b; --danger-soft:#fdecea; --ok:#1d7a45;
+  --primary:#161b33; --primary-ink:#ffffff;
+  --num:"Barlow Condensed","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --body:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
+  --row:46px;
   color-scheme: light;
 }
+/* ===== ダーク ===== */
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0f1220; --panel:#181c2e; --ink:#e8eaf2; --muted:#9aa1b5; --line:#2a3046; --cell:#242a3f; --head:#1f2438;
-    --btn-line:#39405a; --primary:#e8eaf2; --primary-ink:#0f1220; --today:#ff6a3d;
-    --free-bg:#163323; --free-line:#2a5a3e; --free-ink:#8fdcb0;
-    --busy-bg:#3a2417; --busy-line:#6b3f25; --busy-ink:#ffbf95;
-    --mine-bg:#2a2650; --mine-line:#4c43a0; --mine-ink:#c9c1ff;
-    --sel-bg:#e8eaf2; --sel-ink:#0f1220;
-    --block-bg:#22273a; --block-ink:#8a91a6;
-    --notice-bg:#3a2f14; --notice-ink:#f2d58b; --err-bg:#3d1c1a; --err-ink:#ffb4aa; --ok-bg:#6fd39a; --ok-ink:#0f1220;
+    --bg:#0d1020; --surface:#161a2e; --raise:#1c2138; --ink:#e9ecf7; --muted:#9ba3bf; --faint:#636b88; --line:#2a3050;
+    --free:#132a1f; --free-line:#2f6b49; --free-ink:#7fdca5;
+    --taken:#262c48; --taken-ink:#d6dbef; --crew:#2e3556;
+    --mine:#8c74ff; --mine-ink:#0d1020;
+    --sel:#2b2459; --sel-line:#a593ff; --sel-ink:#d9d1ff;
+    --amber:#ffb547; --amber-soft:#3a2c10;
+    --danger:#ff8a7a; --danger-soft:#3a1a17; --ok:#7fdca5;
+    --primary:#e9ecf7; --primary-ink:#0d1020;
     color-scheme: dark;
   }
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
-body{padding:16px;max-width:1240px;margin-inline:auto;padding-bottom:96px}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-h1{font-size:1.45rem;margin:0}
-.sub{color:var(--muted);margin:.35rem 0 0;font-size:.9rem}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px #17203308}
-.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-button,input,select,textarea{font:inherit;border:1px solid var(--btn-line);border-radius:10px;padding:9px 11px;background:var(--panel);color:inherit}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-text-size-adjust:100%}
+body{max-width:1280px;margin:0 auto;padding:0 16px 120px}
+button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-button.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
-button.danger{color:var(--err-ink);border-color:var(--err-ink)}
-button:disabled{opacity:.45;cursor:not-allowed}
-.small{padding:6px 10px;font-size:.85rem}
-.date-label{font-weight:700;min-width:150px}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
-.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px;border:1px solid}
-.lg-free{background:var(--free-bg);border-color:var(--free-line)!important}
-.lg-busy{background:var(--busy-bg);border-color:var(--busy-line)!important}
-.lg-mine{background:var(--mine-bg);border-color:var(--mine-line)!important}
-.lg-sel{background:var(--sel-bg);border-color:var(--sel-bg)!important}
-.user{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.9rem}
-.badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--primary);color:var(--primary-ink)}
-.tabs{display:none;gap:6px;margin-bottom:12px}
-.tabs button{flex:1 1 0;min-width:0;padding:6px 2px;font-size:.85rem;border-radius:12px;line-height:1.2}
-.tabs button small{display:block;font-size:.72rem}
-.tabs button[aria-pressed=true]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);font-weight:700}
-.tabs button.today:not([aria-pressed=true]){border-color:var(--today);color:var(--today)}
-.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
-.day{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.day.today{border-color:var(--today);box-shadow:0 0 0 1px var(--today)}
-.day h2{margin:0;font-size:1rem;padding:10px 12px;background:var(--head);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
-.day h2 .tag{font-size:.72rem;padding:1px 8px;border-radius:999px;background:var(--today);color:#fff}
-.grid{display:grid;grid-template-columns:58px repeat(3,1fr)}
-.cell{padding:5px;border-bottom:1px solid var(--cell);border-right:1px solid var(--cell);min-height:50px;display:flex;align-items:stretch;justify-content:center}
-.cell.c4{border-right:0}
-.colhead{font-weight:700;font-size:.85rem;background:var(--head);min-height:36px;align-items:center}
-.time{font-weight:650;color:var(--muted);font-size:.85rem;align-items:center}
-.time.past{opacity:.45}
-.book{width:100%;min-height:40px;white-space:normal;font-size:.8rem;padding:4px;line-height:1.25;background:var(--free-bg);border-color:var(--free-line);color:var(--free-ink)}
-.book.busy{background:var(--busy-bg);border-color:var(--busy-line);color:var(--busy-ink)}
-.book.mine{background:var(--mine-bg);border-color:var(--mine-line);color:var(--mine-ink)}
-.book.block{background:var(--block-bg);border-color:var(--line);color:var(--block-ink)}
-.book.sel{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-ink);font-weight:700}
-.book.past{opacity:.5}
-.book small{display:block;font-size:.7rem;opacity:.85}
-.empty{font-size:.8rem;color:var(--muted);opacity:.6;align-self:center}
-.notice{padding:10px 12px;background:var(--notice-bg);border-radius:10px;color:var(--notice-ink);font-size:.85rem;line-height:1.6}
-.error{padding:10px 12px;background:var(--err-bg);border-radius:10px;color:var(--err-ink);font-size:.9rem;margin-bottom:12px}
-.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:50;background:var(--ok-bg);color:var(--ok-ink);padding:10px 16px;border-radius:999px;font-weight:700;box-shadow:0 6px 24px #0003;max-width:calc(100% - 24px)}
-.selbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 24px #0002;padding:12px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
-.selbar .hint{flex-basis:100%;text-align:center;font-size:.78rem;color:var(--muted)}
-dialog{border:0;border-radius:16px;width:min(460px,calc(100% - 24px));padding:20px;box-shadow:0 20px 70px #0003;background:var(--panel);color:var(--ink)}
-dialog::backdrop{background:#14182499}
-dialog h2{margin-top:0;font-size:1.15rem}
-form{display:grid;gap:12px}
-label{display:grid;gap:5px;font-size:.9rem;font-weight:600}
-label input,label select,label textarea{width:100%;font-weight:400}
-.form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;font-size:.82rem}
-.chips span{background:var(--head);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
-.radio{display:flex;gap:12px;flex-wrap:wrap;font-weight:400}
-.radio label{display:flex;gap:4px;align-items:center;font-weight:400}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== ヘッダー ===== */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0 12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:1.25rem;letter-spacing:.02em}
+.brand h1 b{font-family:var(--num);font-size:1.6rem;font-weight:700;letter-spacing:.01em;margin-right:6px}
+.brand p{margin:0;color:var(--muted);font-size:.82rem}
+.user{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.88rem}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 14px;font-weight:600}
+.btn.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.small{padding:6px 11px;font-size:.84rem;border-radius:10px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--amber);color:#1a1300}
+.count{display:inline-grid;place-items:center;min-width:1.4em;height:1.4em;border-radius:999px;background:var(--mine);color:var(--mine-ink);font-family:var(--num);font-weight:700;font-size:.9rem;margin-left:4px;padding:0 4px}
+
+/* ===== 週と日の切り替え（上に固定） ===== */
+.nav{position:sticky;top:0;z-index:15;background:var(--bg);padding:8px 0 10px;margin-bottom:6px}
+.week{display:flex;align-items:center;gap:8px}
+.week .arrow{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:1.3rem;line-height:1}
+.week .label{flex:1;text-align:center;font-family:var(--num);font-size:1.35rem;font-weight:600;letter-spacing:.02em}
+.week .label small{display:block;font-family:var(--body);font-size:.75rem;color:var(--muted);font-weight:400;letter-spacing:0}
+.week .thisweek{height:44px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.tabs button{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:6px 2px 7px;text-align:center;line-height:1.1}
+.tabs .d{display:block;font-family:var(--num);font-size:1.45rem;font-weight:600}
+.tabs .w{display:block;font-size:.72rem;color:var(--muted)}
+.tabs .f{display:block;font-size:.68rem;margin-top:3px;color:var(--free-ink);font-weight:600}
+.tabs .f.none{color:var(--faint);font-weight:400}
+.tabs button[aria-pressed=true]{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.tabs button[aria-pressed=true] .w,.tabs button[aria-pressed=true] .f{color:inherit;opacity:.85}
+.tabs button.today::after{content:"";position:absolute;top:6px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-start;margin-top:10px;font-size:.76rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}
+.lg-free{background:var(--free);border:1.5px dashed var(--free-line)}
+.lg-taken{background:var(--taken)}
+.lg-mine{background:var(--mine)}
+.lg-sel{background:var(--sel);border:2px solid var(--sel-line)}
+
+/* ===== 予約表 ===== */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.grid{display:grid;position:relative}
+.h-day{padding:10px 8px 6px;font-weight:700;font-size:.92rem;display:flex;align-items:baseline;gap:6px;justify-content:center;border-left:1px solid var(--line);flex-wrap:wrap}
+.h-day .n{font-family:var(--num);font-size:1.25rem}
+.h-day.today{background:var(--amber-soft)}
+.h-day .tag{font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--amber);color:#1a1300}
+.h-day .tag.hol{background:var(--taken);color:var(--muted)}
+.h-lane{padding:4px 2px 8px;font-size:.78rem;color:var(--muted);text-align:center;border-bottom:1px solid var(--line)}
+.h-lane.first{border-left:1px solid var(--line)}
+.h-lane.today{background:var(--amber-soft)}
+.t{font-family:var(--num);font-size:1rem;font-weight:600;color:var(--muted);text-align:right;padding:0 8px 0 0;transform:translateY(-.6em);height:var(--row)}
+.t.half{font-size:.82rem;color:var(--faint);font-weight:500}
+.t.past{opacity:.45}
+.slot{padding:3px;min-height:var(--row);border-top:1px solid var(--raise)}
+.slot.hour{border-top-color:var(--line)}
+.slot.first{border-left:1px solid var(--line)}
+.slot.todaycol{background:color-mix(in srgb, var(--amber-soft) 45%, transparent)}
+.s{width:100%;height:100%;min-height:calc(var(--row) - 6px);border-radius:10px;border:0;padding:4px 6px;font-size:.8rem;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.s.free{background:var(--free);border:1.5px dashed var(--free-line);color:var(--free-ink);font-size:1.15rem;font-weight:500}
+.s.free:hover{border-style:solid}
+.s.sel{background:var(--sel);border:2px solid var(--sel-line);color:var(--sel-ink);font-weight:700;font-size:.82rem}
+.s.taken{background:var(--taken);color:var(--taken-ink);align-items:flex-start;text-align:left}
+.s.crew{background:var(--crew)}
+.s.mine{background:var(--mine);color:var(--mine-ink);align-items:flex-start;text-align:left}
+.s.block{background:repeating-linear-gradient(-45deg,var(--taken) 0 6px,transparent 6px 12px);color:var(--muted)}
+.s .team{font-weight:700;font-size:.84rem;word-break:break-word}
+.s .who{font-size:.72rem;opacity:.8;margin-top:2px}
+.s .when{font-family:var(--num);font-size:.86rem;font-weight:600;opacity:.75;margin-top:auto}
+.s.past{opacity:.45}
+.none{display:block;width:100%;height:100%;min-height:calc(var(--row) - 6px)}
+.nowline{pointer-events:none;position:relative;z-index:3}
+.nowline::before{content:"";position:absolute;left:0;right:0;top:var(--at);border-top:2px solid var(--amber)}
+.nowline::after{content:"";position:absolute;left:-5px;top:calc(var(--at) - 4px);width:10px;height:10px;border-radius:50%;background:var(--amber)}
+
+/* ===== 下の選択バー ===== */
+.selbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:20;max-width:720px;margin:0 auto;background:var(--primary);color:var(--primary-ink);border-radius:18px;padding:12px 12px 12px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 12px 40px #0006}
+.selbar .what{flex:1;min-width:0;line-height:1.3}
+.selbar .what b{font-family:var(--num);font-size:1.4rem;margin-right:4px}
+.selbar .what small{display:block;font-size:.75rem;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.selbar .go{background:var(--mine);color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700}
+.selbar .clear{background:transparent;color:inherit;border:1px solid currentColor;border-radius:12px;padding:11px 12px;opacity:.8}
+
+/* ===== パネル・お知らせ ===== */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:16px}
+.panel h3{margin:0 0 8px;font-size:1rem}
+.note{color:var(--muted);font-size:.85rem;line-height:1.7;margin:0}
+.alert{border-radius:14px;padding:11px 14px;font-size:.88rem;margin:0 0 10px;line-height:1.6}
+.alert.err{background:var(--danger-soft);color:var(--danger)}
+.alert.info{background:var(--amber-soft);color:var(--ink)}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;background:var(--ok);color:#fff;padding:11px 18px;border-radius:999px;font-weight:700;box-shadow:0 8px 30px #0004;max-width:calc(100% - 24px);text-align:center}
+@media (prefers-color-scheme: dark){ .toast{color:#0d1020} }
 .list{list-style:none;margin:0;padding:0}
-.list li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cell);font-size:.9rem}
-.list li:last-child{border-bottom:0}
+.list li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:.92rem}
+.list li:first-child{border-top:0}
+.list .when{font-family:var(--num);font-size:1.15rem;font-weight:600}
 .muted{color:var(--muted)}
 .log{font-size:.82rem;max-height:420px;overflow:auto}
 .log li{display:block}
-h3{margin:0 0 10px;font-size:1rem}
+details{border-top:1px solid var(--line);padding:10px 0}
 details summary{cursor:pointer;font-weight:700}
-.footer{color:var(--muted);font-size:.78rem;text-align:center;padding:10px}
-@media(max-width:720px){
-  body{padding:10px;padding-bottom:120px}
-  h1{font-size:1.2rem}
-  .panel{padding:10px}
-  .tabs{display:flex}
-  .days{grid-template-columns:1fr}
-  .day:not(.show){display:none}
+.stats td,.stats th{padding:4px 8px;text-align:left;border-bottom:1px solid var(--line);font-size:.85rem}
+.stats{border-collapse:collapse;width:100%}
+.footer{color:var(--faint);font-size:.76rem;text-align:center;padding:18px}
+
+/* ===== ダイアログ ===== */
+dialog{border:0;border-radius:20px;width:min(460px,calc(100% - 24px));padding:22px;box-shadow:0 24px 80px #0005;background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:#0a0d1acc}
+dialog h2{margin:0 0 12px;font-size:1.15rem}
+form{display:grid;gap:14px}
+label{display:grid;gap:6px;font-size:.88rem;font-weight:600}
+input,select,textarea{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--raise);width:100%;font-weight:400;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{background:var(--sel);color:var(--sel-ink);border-radius:10px;padding:5px 10px;font-size:.84rem;font-weight:600}
+.radio{display:flex;gap:14px;flex-wrap:wrap}
+.radio label{display:flex;gap:6px;align-items:center;font-weight:400}
+.radio input{width:auto}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.who-line{margin:0;font-size:.85rem;color:var(--muted)}
+.who-line b{color:var(--ink)}
+
+/* ===== 画面の大きさ ===== */
+@media (min-width:1100px){
+  .tabs{display:none}
+  .nav{position:static}
+  .week{max-width:560px}
+  :root{--row:42px}
+}
+@media (max-width:420px){
+  body{padding:0 10px 120px}
+  .brand h1{font-size:1.1rem}
+  .brand h1 b{font-size:1.4rem}
+  .tabs .d{font-size:1.25rem}
 }
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>🎵 D-kuts 練習場所予約</h1>
-    <p class="sub">手前・真ん中・奥｜平日 18:00〜22:00｜30分単位｜12/18（クリスマス）まで予約できます</p>
+<header class="top">
+  <div class="brand">
+    <h1><b>D-kuts</b>練習場所予約</h1>
+    <p>手前・真ん中・奥｜平日 18:00〜22:00｜12/18（クリスマス）まで予約できます</p>
   </div>
-  <div class="user" id="user"></div>
+  <div class="user"><button class="btn small" id="jumpMine" hidden>自分の予約<span class="count" id="mineCount">0</span></button><span class="user" id="user"></span></div>
 </header>
 
-<div id="inapp" class="notice" hidden style="margin-bottom:12px">このアプリの中のブラウザではGoogleログインができません。右上（または下）のメニューから「ブラウザで開く」を選んでください。</div>
-<div id="offline" class="error" hidden>インターネットにつながっていません。この間の予約・取り消しは反映されません。</div>
-<div id="err" class="error" hidden></div>
+<div id="inapp" class="alert info" hidden>このアプリの中のブラウザではGoogleログインができません。メニューから「ブラウザで開く」を選んでください。</div>
+<div id="offline" class="alert err" hidden>インターネットにつながっていません。この間の予約・取り消しは反映されません。</div>
+<div id="err" class="alert err" hidden></div>
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+<div class="alert info" id="loginHint" hidden>空き状況はログインしなくても見られます。予約するときは「Googleでログイン」を押してください。</div>
 
-<div class="panel">
-  <div class="controls" style="justify-content:space-between">
-    <div class="controls">
-      <button id="prev">‹ 前の週</button>
-      <button id="today" class="primary">今週</button>
-      <button id="next">次の週 ›</button>
-      <span class="date-label" id="range"></span>
-    </div>
-    <div class="legend">
-      <span><i class="lg-free"></i>空き</span>
-      <span><i class="lg-busy"></i>予約済み</span>
-      <span><i class="lg-mine"></i>自分の予約</span>
-      <span><i class="lg-sel"></i>選択中</span>
-    </div>
+<nav class="nav" aria-label="週と日の切り替え">
+  <div class="week">
+    <button class="arrow" id="prev" aria-label="前の週">‹</button>
+    <div class="label" id="range"></div>
+    <button class="arrow" id="next" aria-label="次の週">›</button>
+    <button class="btn small thisweek" id="today">今週</button>
   </div>
-</div>
+  <div class="tabs" id="tabs"></div>
+  <div class="legend">
+    <span><i class="lg-free"></i>空き</span>
+    <span><i class="lg-taken"></i>予約済み</span>
+    <span><i class="lg-mine"></i>自分の予約</span>
+    <span><i class="lg-sel"></i>選択中</span>
+  </div>
+</nav>
 
-<div class="tabs" id="tabs"></div>
-<div class="days" id="days"></div>
+<div class="board"><div class="grid" id="days"></div></div>
 
-<div class="panel" id="minePanel" hidden style="margin-top:14px">
+<section class="panel" id="minePanel" hidden>
   <h3>自分の予約</h3>
   <ul class="list" id="mineList"></ul>
-</div>
+</section>
 
-<div class="panel" id="adminPanel" hidden style="margin-top:14px">
+<section class="panel" id="adminPanel" hidden>
   <h3>公式アカウントのメニュー</h3>
+  <p class="note">どの予約も、表で押すと取り消し・変更できます。1枠ずつ使用不可にするときは、表で選んで「予約する」から種類を「使用不可」にします。</p>
   <details>
     <summary>予約の記録</summary>
     <ul class="list log" id="logList"><li class="muted">読み込み中…</li></ul>
   </details>
-  <details style="margin-top:12px">
+  <details>
+    <summary>チームごとの予約時間（表示中の週）</summary>
+    <div id="statsBox" style="margin-top:10px"></div>
+  </details>
+  <details>
     <summary>1日まとめて使用不可にする</summary>
     <form id="dayBlockForm" style="margin-top:10px">
-      <div class="controls">
-        <label>日付<input type="date" id="blockDate"></label>
-        <label style="flex:1">理由（表に出ます）<input id="blockReason" maxlength="40" placeholder="例：体育館点検"></label>
-      </div>
-      <p class="sub" style="margin:0">空いている枠だけを使用不可にします。すでに入っている予約はそのまま残ります。</p>
-      <div class="form-actions">
-        <button type="button" id="dayUnblock">その日の使用不可を全部外す</button>
-        <button class="primary" type="submit">使用不可にする</button>
+      <label>日付<input type="date" id="blockDate"></label>
+      <label>理由（表に出ます）<input id="blockReason" maxlength="40" placeholder="例：体育館点検"></label>
+      <p class="note">空いている枠だけを使用不可にします。すでに入っている予約はそのまま残ります。</p>
+      <div class="actions">
+        <button type="button" class="btn" id="dayUnblock">その日の使用不可を全部外す</button>
+        <button class="btn primary" type="submit">使用不可にする</button>
       </div>
     </form>
   </details>
-  <details style="margin-top:12px">
+  <details>
     <summary>選べるチームの一覧</summary>
     <form id="teamsForm" style="margin-top:10px">
-      <label>1行に1チーム
-        <textarea id="teamsText" rows="10"></textarea>
-      </label>
-      <div class="form-actions"><button class="primary" type="submit">保存</button></div>
+      <label>1行に1チーム<textarea id="teamsText" rows="10"></textarea></label>
+      <div class="actions"><button class="btn primary" type="submit">保存</button></div>
     </form>
   </details>
-  <details style="margin-top:12px">
+  <details>
     <summary>クルーの固定枠を入れる</summary>
     <form id="crewForm" style="margin-top:10px">
-      <p class="sub" style="margin:0">鏡前使用スケジュール（毎週同じ）を、期間内の平日に入れます。すでに予約がある枠は飛ばします。</p>
-      <div class="controls">
-        <label>から<input type="date" id="crewFrom" value="2026-11-09"></label>
-        <label>まで<input type="date" id="crewTo" value="2026-12-18"></label>
-      </div>
-      <div class="form-actions"><button class="primary" type="submit">固定枠を入れる</button></div>
-      <p class="sub" id="crewMsg" style="margin:0"></p>
+      <p class="note">鏡前使用スケジュール（毎週同じ）を、期間内の平日に入れます。すでに予約がある枠は飛ばします。</p>
+      <label>この日から<input type="date" id="crewFrom" value="2026-11-09"></label>
+      <label>この日まで<input type="date" id="crewTo" value="2026-12-18"></label>
+      <div class="actions"><button class="btn primary" type="submit">固定枠を入れる</button></div>
+      <p class="note" id="crewMsg"></p>
     </form>
   </details>
-  <p class="sub">1枠ずつ使用不可にしたいときは、表で選んで「予約する」から種類を「使用不可」にしてください。どの予約も、押すと取り消し・変更できます。</p>
-</div>
+</section>
 
-<div class="panel" style="margin-top:14px">
-  <div class="notice">
-    空いている枠をタップして選び、下の「予約する」を押してください。同じ場所の続きの時間は、最初と最後をタップすると間もまとめて選べます。<br>
-    予約にはGoogleでのログインが必要で、予約者名にはGoogleアカウントの名前が入ります。<br>
-    予約を取り消せるのは、予約した本人と公式アカウントだけです。クルーの固定枠は公式アカウントが管理します。
-  </div>
-</div>
+<section class="panel">
+  <h3>使い方</h3>
+  <p class="note">
+    空いている枠（点線）をタップして選び、下に出る「予約する」を押します。同じ場所の続きの時間は、最初と最後の枠をタップすると間もまとめて選べます。<br>
+    予約者名にはGoogleアカウントの名前が入ります。取り消せるのは、予約した本人と公式アカウントだけです。クルーの固定枠は公式アカウントが管理します。
+  </p>
+</section>
 
 <div class="footer">D-kuts 共有予約表</div>
 
 <div class="selbar" id="selbar" hidden>
-  <span><b id="selCount">0</b>枠を選択中</span>
-  <button id="selClear">選択をやめる</button>
-  <button id="selGo" class="primary">予約する</button>
-  <span class="hint">同じ場所の続きの時間は、最後の枠をタップすると間もまとめて選べます</span>
+  <div class="what"><b id="selCount">0</b>枠を選択中<small id="selWhat"></small></div>
+  <button class="clear" id="selClear">やめる</button>
+  <button class="go" id="selGo">予約する</button>
 </div>
 
 <dialog id="dlg">
   <h2 id="dlgTitle">練習場所を予約</h2>
   <form id="bookingform">
     <div class="chips" id="selChips"></div>
-    <label>チーム
-      <select id="teamSel"></select>
-    </label>
-    <label id="teamFreeWrap" hidden>チーム名（自由に書く）
-      <input id="teamFree" maxlength="40" placeholder="例：新しいチーム">
-    </label>
-    <p class="sub" style="margin:0">予約者：<b id="personName"></b>（Googleアカウントの名前）</p>
+    <label>チーム<select id="teamSel"></select></label>
+    <label id="teamFreeWrap" hidden>チーム名<input id="teamFree" maxlength="40" placeholder="一覧にないチーム名を書いてください"></label>
+    <p class="who-line">予約者：<b id="personName"></b>（Googleアカウントの名前）</p>
     <div id="kindWrap" hidden>
-      <span style="font-size:.9rem;font-weight:600">種類（公式アカウントのみ）</span>
+      <label style="margin-bottom:6px">種類（公式アカウントのみ）</label>
       <div class="radio">
         <label><input type="radio" name="kind" value="team" checked>ふつうの予約</label>
         <label><input type="radio" name="kind" value="crew">クルーの固定枠</label>
         <label><input type="radio" name="kind" value="block">使用不可</label>
       </div>
     </div>
-    <div class="form-actions">
-      <button type="button" id="cancel">閉じる</button>
-      <button class="primary" type="submit" id="submitBtn">予約する</button>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="cancel">閉じる</button>
+      <button class="btn primary" type="submit" id="submitBtn">予約する</button>
     </div>
   </form>
 </dialog>
@@ -251,14 +318,14 @@ details summary{cursor:pointer;font-weight:700}
 <dialog id="info">
   <h2 id="infoTitle">予約の内容</h2>
   <form id="infoForm">
-    <p class="sub" id="infoWhen" style="margin:0"></p>
+    <p class="who-line" id="infoWhen"></p>
     <label>チーム<input id="infoTeam" maxlength="40" readonly></label>
     <label>予約者<input id="infoPerson" maxlength="40" readonly></label>
-    <p class="sub" id="infoMeta" style="margin:0"></p>
-    <div class="form-actions">
-      <button type="button" id="infoClose">閉じる</button>
-      <button type="button" id="infoSave" hidden>変更を保存</button>
-      <button type="button" id="infoDel" class="danger" hidden>取り消す</button>
+    <p class="who-line" id="infoMeta"></p>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="infoClose">閉じる</button>
+      <button type="button" class="btn" id="infoSave" hidden>変更を保存</button>
+      <button type="button" class="btn danger" id="infoDel" hidden>取り消す</button>
     </div>
   </form>
 </dialog>
@@ -279,6 +346,8 @@ const ROOMS = ["手前","真ん中","奥"];
 const TIMES = ["1800","1830","1900","1930","2000","2030","2100","2130"];
 const MAX_DAYS = 14;               // ふだんは何日先まで予約できるか
 const OPEN_UNTIL = "2026-12-18";   // この日までは、14日より先でも予約できる（クリスマスイベント）
+// 平日の祝日（表に「祝日」と出す。予約はふつうにできる）
+const HOLIDAYS = { "2026-11-03":"文化の日", "2026-11-23":"勤労感謝の日", "2027-01-11":"成人の日", "2027-02-11":"建国記念の日", "2027-02-23":"天皇誕生日", "2027-03-22":"振替休日" };
 const DEFAULT_TEAMS = ["hiphop","ガールズ","ナムジャ","ブレイク","ヨジャ","riizefame","AURA","NCTシズニ","cRage 4's","Lazy Boys","FLEUR","Money","Soror³","NEEDS","One more time"];
 // クルーの鏡前使用スケジュール（クリスマスイベント用）。曜日(1=月)→ [時, 場所の番号(0手前 1真ん中 2奥), クルー]
 const CREW = {
@@ -297,6 +366,8 @@ let teams = DEFAULT_TEAMS.slice();
 let weekOffset = 0, dayTab = null, lastPick = null;
 const selected = new Map();  // "date|slot" -> {date,slot}
 const $ = id => document.getElementById(id);
+/** 表に出す予約者名（Googleの名前。名前が無いアカウントはメールを出さずに「名前なし」） */
+const myName = () => ((user && user.displayName) || "名前なし").trim().slice(0, 40);
 const isAdmin = () => !!(user && user.email === OFFICIAL && user.emailVerified);
 const store = { get(k){ try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }, set(k,v){ try { localStorage.setItem(k, v); } catch (e) {} } };
 
@@ -355,9 +426,13 @@ function runOf(ds, k){
 }
 
 /* ============ 表示 ============ */
+/** その日の空き枠の数（予約できる枠だけ） */
+function freeCount(ds){ const day = bookings[ds] || {}; let n = 0; ROOMS.forEach((_, r) => TIMES.forEach(t => { if (!day[slotKey(r, t)] && canBook(ds, t)) n++; })); return n; }
+const wide = () => window.matchMedia("(min-width:1100px)").matches;
+
 function render(){
   const start = weekStart(), end = new Date(start); end.setDate(end.getDate()+4);
-  $("range").textContent = `${dateLabel(dateStr(start))} 〜 ${dateLabel(dateStr(end))}`;
+  $("range").innerHTML = `${start.getMonth()+1}/${start.getDate()} – ${end.getMonth()+1}/${end.getDate()}<small>${weekOffset === 0 ? "今週" : weekOffset === 1 ? "来週" : weekOffset + "週間後"}</small>`;
   $("prev").disabled = weekOffset <= 0;
   $("next").disabled = weekOffset >= weekLimit();
   const todayS = dateStr(new Date());
@@ -366,54 +441,85 @@ function render(){
   for (let i = 0; i < 5; i++) { const d = new Date(start); d.setDate(d.getDate()+i); days.push(dateStr(d)); }
   if (!dayTab || !days.includes(dayTab)) dayTab = days.find(ds => !dayOver(ds)) || days[0];
 
-  $("tabs").innerHTML = days.map(ds => { const d = parseDate(ds);
-    return `<button data-tab="${ds}" aria-pressed="${ds === dayTab}" class="${ds === todayS ? "today" : ""}">${d.getMonth()+1}/${d.getDate()}<small>${WD[d.getDay()]}${ds === todayS ? "・今日" : ""}</small></button>`; }).join("");
+  $("tabs").innerHTML = days.map(ds => { const d = parseDate(ds), f = freeCount(ds);
+    return `<button data-tab="${ds}" aria-pressed="${ds === dayTab}" class="${ds === todayS ? "today" : ""}" aria-label="${dateLabel(ds)} 空き${f}枠"><span class="d">${d.getDate()}</span><span class="w">${WD[d.getDay()]}${ds === todayS ? "・今日" : HOLIDAYS[ds] ? "・祝" : ""}</span><span class="f${f ? "" : " none"}">${f ? "空き" + f : dayOver(ds) ? "終了" : "空きなし"}</span></button>`; }).join("");
 
-  $("days").innerHTML = days.map(ds => {
-    const day = bookings[ds] || {};
-    let h = `<section class="day${ds === dayTab ? " show" : ""}${ds === todayS ? " today" : ""}"><h2>${dateLabel(ds)}${ds === todayS ? '<span class="tag">今日</span>' : ""}</h2><div class="grid">`;
-    h += `<div class="cell colhead" style="grid-row:1;grid-column:1">時間</div>` + ROOMS.map((r, i) => `<div class="cell colhead${i === 2 ? " c4" : ""}" style="grid-row:1;grid-column:${i+2}">${r}</div>`).join("");
-    TIMES.forEach((t, ti) => {
-      const row = ti + 2;
-      h += `<div class="cell time${isPast(ds, t) ? " past" : ""}" style="grid-row:${row};grid-column:1">${timeLabel(t)}</div>`;
+  // 表：PCは1週間、スマホ・タブレットは1日
+  const shown = wide() ? days : [dayTab];
+  const grid = $("days");
+  grid.style.gridTemplateColumns = `52px repeat(${shown.length * 3}, minmax(0, 1fr))`;
+  let h = `<div style="grid-row:1 / span 2;grid-column:1"></div>`;
+  shown.forEach((ds, di) => {
+    const c0 = 2 + di * 3, isT = ds === todayS, d = parseDate(ds);
+    h += `<div class="h-day${isT ? " today" : ""}" style="grid-row:1;grid-column:${c0} / span 3"><span class="n">${d.getMonth()+1}/${d.getDate()}</span>${WD[d.getDay()]}${isT ? '<span class="tag">今日</span>' : ""}${HOLIDAYS[ds] ? `<span class="tag hol">祝日</span>` : ""}</div>`;
+    ROOMS.forEach((r, ri) => { h += `<div class="h-lane${ri === 0 ? " first" : ""}${isT ? " today" : ""}" style="grid-row:2;grid-column:${c0 + ri}">${r}</div>`; });
+  });
+  TIMES.forEach((t, ti) => {
+    const row = ti + 3, half = t.endsWith("30");
+    h += `<div class="t${half ? " half" : ""}${shown.every(ds => isPast(ds, t)) ? " past" : ""}" style="grid-row:${row};grid-column:1">${half ? ":30" : timeLabel(t)}</div>`;
+    shown.forEach((ds, di) => {
+      const day = bookings[ds] || {}, isT = ds === todayS;
       ROOMS.forEach((_, ri) => {
-        const k = slotKey(ri, t), b = day[k], id = `${ds}|${k}`, col = `grid-column:${ri+2}`, c4 = ri === 2 ? " c4" : "";
+        const k = slotKey(ri, t), b = day[k], id = `${ds}|${k}`, col = 2 + di * 3 + ri;
+        const cls = `slot${half ? "" : " hour"}${ri === 0 ? " first" : ""}${isT ? " todaycol" : ""}`;
         if (b) {
           const run = runOf(ds, k);
           if (run[0] !== k) return;                 // まとめた予約の2つ目以降は描かない
-          const cls = b.kind === "block" ? "block" : (user && b.uid === user.uid && b.kind === "team" ? "mine" : "busy");
-          const span = run.length, last = run[run.length-1];
-          const when = span > 1 ? `${timeLabel(t)}〜${endOf(timeOf(last))}` : "";
-          const label = b.kind === "block" ? `使用不可<small>${esc(b.team)}</small>` : `${esc(b.team)}<small>${b.kind === "crew" ? "クルー枠" : esc(b.person)}${when ? "<br>" + when : ""}</small>`;
-          h += `<div class="cell${c4}" style="grid-row:${row} / span ${span};${col}"><button class="book ${cls}${isPast(ds, timeOf(last)) ? " past" : ""}" data-info="${id}" aria-label="${dateLabel(ds)} ${rangeLabel(k, last)} ${esc(b.team)}">${label}</button></div>`;
+          const kind = b.kind === "block" ? "block" : (user && b.uid === user.uid && b.kind === "team" ? "mine" : b.kind === "crew" ? "taken crew" : "taken");
+          const last = run[run.length-1], span = run.length;
+          const when = `${timeLabel(t)}–${endOf(timeOf(last))}`;
+          const inner = b.kind === "block"
+            ? `<span class="team">使用不可</span><span class="who">${esc(b.team)}</span>`
+            : `<span class="team">${esc(b.team)}</span><span class="who">${b.kind === "crew" ? "クルー" : esc(b.person)}</span>${span > 1 ? `<span class="when">${when}</span>` : ""}`;
+          h += `<div class="${cls}" style="grid-row:${row} / span ${span};grid-column:${col}"><button class="s ${kind}${isPast(ds, timeOf(last)) ? " past" : ""}" data-info="${id}" aria-label="${dateLabel(ds)} ${rangeLabel(k, last)} ${esc(b.team)}">${inner}</button></div>`;
         } else if (canBook(ds, t)) {
           const on = selected.has(id);
-          h += `<div class="cell${c4}" style="grid-row:${row};${col}"><button class="book${on ? " sel" : ""}" data-pick="${id}" aria-pressed="${on}" aria-label="${dateLabel(ds)} ${slotLabel(k)} 空き">${on ? "✓ 選択中" : "＋"}</button></div>`;
+          h += `<div class="${cls}" style="grid-row:${row};grid-column:${col}"><button class="s ${on ? "sel" : "free"}" data-pick="${id}" aria-pressed="${on}" aria-label="${dateLabel(ds)} ${slotLabel(k)} ${on ? "選択中" : "空き"}">${on ? "✓ 選択" : "＋"}</button></div>`;
         } else {
-          h += `<div class="cell${c4}" style="grid-row:${row};${col}"><span class="empty">—</span></div>`;
+          h += `<div class="${cls}" style="grid-row:${row};grid-column:${col}"><span class="none"></span></div>`;
         }
       });
     });
-    return h + `</div></section>`;
-  }).join("");
+  });
+  // 今の時刻の線（今日が表示されていて、練習時間中のとき）
+  const ti = shown.indexOf(todayS), nm = nowMin(), s0 = tMin(TIMES[0]), e0 = tMin(TIMES[TIMES.length-1]) + 30;
+  if (ti >= 0 && nm >= s0 && nm < e0) {
+    const idx = Math.floor((nm - s0) / 30), frac = ((nm - s0) % 30) / 30 * 100;
+    h += `<div class="nowline" style="grid-row:${idx + 3};grid-column:${2 + ti * 3} / span 3;--at:${frac}%" aria-hidden="true"></div>`;
+  }
+  grid.innerHTML = h;
 
+  // 選択バー
   $("selbar").hidden = selected.size === 0;
   $("selCount").textContent = selected.size;
+  $("selWhat").textContent = selected.size ? groupSelected([...selected.values()]).join("、") : "";
   renderUser();
   renderMine();
+  $("loginHint").hidden = !fb || !!user;
   $("adminPanel").hidden = !isAdmin();
+  if (isAdmin()) renderStats(days);
 }
+window.addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(render, 150); });
+
+/** 公式：表示中の週のチームごとの予約時間（クルー枠・使用不可は除く） */
+function renderStats(days){
+  const sum = {};
+  days.forEach(ds => Object.values(bookings[ds] || {}).forEach(b => { if (b.kind === "team") sum[b.team] = (sum[b.team] || 0) + 0.5; }));
+  const rows = Object.entries(sum).sort((a,b) => b[1] - a[1]);
+  $("statsBox").innerHTML = rows.length ? `<table class="stats"><tr><th>チーム</th><th>時間</th></tr>${rows.map(([t,h]) => `<tr><td>${esc(t)}</td><td>${h}時間</td></tr>`).join("")}</table>` : `<p class="note">この週のチームの予約はまだありません</p>`;
+}
+
 
 function renderUser(){
   const u = $("user");
   if (!fb) { u.innerHTML = `<span class="muted">接続中…</span>`; return; }
-  if (!user) { u.innerHTML = `<button class="primary" id="login">Googleでログイン</button>`; $("login").onclick = login; return; }
-  u.innerHTML = `${isAdmin() ? '<span class="badge">公式</span>' : ""}<span>${esc(user.displayName || user.email)}</span><button class="small" id="logout">ログアウト</button>`;
+  if (!user) { u.innerHTML = `<button class="btn primary" id="login">Googleでログイン</button>`; $("login").onclick = login; return; }
+  u.innerHTML = `${isAdmin() ? '<span class="badge">公式</span>' : ""}<span>${esc(myName())}</span><button class="btn small ghost" id="logout">ログアウト</button>`;
   $("logout").onclick = () => fb.signOut(auth);
 }
 
 function renderMine(){
-  if (!user) { $("minePanel").hidden = true; return; }
+  if (!user) { $("minePanel").hidden = true; $("jumpMine").hidden = true; return; }
   const items = [];
   Object.keys(bookings).sort().forEach(ds => {
     if (dayOver(ds)) return;
@@ -427,8 +533,9 @@ function renderMine(){
     });
   });
   $("minePanel").hidden = false;
+  $("jumpMine").hidden = false; $("mineCount").textContent = items.length;
   $("mineList").innerHTML = items.length
-    ? items.map(x => `<li><span>${dateLabel(x.ds)} ${rangeLabel(x.run[0], x.run[x.run.length-1])}<br><span class="muted">${esc(x.b.team)}</span></span><button class="small danger" data-del="${x.ds}|${x.run.join(",")}">取り消す</button></li>`).join("")
+    ? items.map(x => `<li><span><span class="when">${dateLabel(x.ds)} ${timeLabel(timeOf(x.run[0]))}–${endOf(timeOf(x.run[x.run.length-1]))}</span><br><span class="muted">${ROOMS[roomOf(x.run[0])]}・${esc(x.b.team)}</span></span><button class="btn small danger" data-del="${x.ds}|${x.run.join(",")}">取り消す</button></li>`).join("")
     : `<li class="muted">これからの予約はありません</li>`;
 }
 
@@ -452,12 +559,25 @@ document.addEventListener("click", e => {
   if (t.dataset.tab) { dayTab = t.dataset.tab; render(); return; }
   if (t.dataset.pick) { if (!user) { login(); return; } pick(t.dataset.pick); return; }
   if (t.dataset.info) { openInfo(t.dataset.info); return; }
+  if (t.id === "jumpMine") { $("minePanel").scrollIntoView({behavior:"smooth"}); return; }
   if (t.dataset.del) {
     const [ds, ks] = t.dataset.del.split("|"), keys = ks.split(","), b = (bookings[ds] || {})[keys[0]];
     if (b && confirm(`この予約（${b.team}・${dateLabel(ds)} ${rangeLabel(keys[0], keys[keys.length-1])}）を取り消しますか？`)) cancelBooking(ds, keys);
     return;
   }
 });
+let touchX = null, touchY = null;
+$("days").addEventListener("touchstart", e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, {passive:true});
+$("days").addEventListener("touchend", e => {
+  if (touchX === null || wide()) return;
+  const dx = e.changedTouches[0].clientX - touchX, dy = e.changedTouches[0].clientY - touchY; touchX = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const tabs = [...document.querySelectorAll("[data-tab]")].map(b => b.dataset.tab), i = tabs.indexOf(dayTab);
+  if (dx < 0 && i < tabs.length - 1) dayTab = tabs[i+1];
+  else if (dx > 0 && i > 0) dayTab = tabs[i-1];
+  else return;
+  render();
+}, {passive:true});
 $("prev").onclick = () => { weekOffset = Math.max(0, weekOffset-1); dayTab = null; render(); };
 $("next").onclick = () => { weekOffset = Math.min(weekLimit(), weekOffset+1); dayTab = null; render(); };
 $("today").onclick = () => { weekOffset = 0; (function(){ const d = new Date(), wd = d.getDay(); if (wd === 0 || wd === 6 || (wd === 5 && dayOver(dateStr(d)))) weekOffset = 1; })(); dayTab = null; render(); };
@@ -514,7 +634,7 @@ function openBooking(){
   $("dlgTitle").textContent = `練習場所を予約（${list.length}枠）`;
   $("selChips").innerHTML = groupSelected(list).map(s => `<span>${s}</span>`).join("");
   fillTeams();
-  $("personName").textContent = user.displayName || user.email;
+  $("personName").textContent = myName();
   $("kindWrap").hidden = !isAdmin();
   document.querySelector('input[name="kind"][value="team"]').checked = true;
   $("submitBtn").disabled = false;
@@ -525,7 +645,7 @@ $("bookingform").addEventListener("submit", async e => {
   e.preventDefault();
   const sel = $("teamSel").value;
   const team = (sel === "__free" ? $("teamFree").value : sel).trim();
-  const person = (user.displayName || user.email || "").slice(0, 40);
+  const person = myName();
   const kind = isAdmin() ? document.querySelector('input[name="kind"]:checked').value : "team";
   if (!team) { alert("チームを選ぶか、チーム名を書いてください。"); return; }
   const list = [...selected.values()];
@@ -681,7 +801,9 @@ try {
   const from = mondayOf(new Date()), to = new Date(from); to.setDate(to.getDate() + 8*7);
   dbm.onValue(dbm.query(dbm.ref(db, "bookings"), dbm.orderByKey(), dbm.startAt(dateStr(from)), dbm.endAt(dateStr(to))), snap => {
     bookings = snap.val() || {};
-    [...selected.keys()].forEach(id => { const [d, k] = id.split("|"); if (bookings[d] && bookings[d][k]) selected.delete(id); });
+    let lost = 0;
+    [...selected.keys()].forEach(id => { const [d, k] = id.split("|"); if (bookings[d] && bookings[d][k]) { selected.delete(id); lost++; } });
+    if (lost && !$("dlg").open) toast(`選んでいた${lost}枠が、ほかの人に予約されたので外しました`);
     render();
   }, err => { console.error(err); showErr("予約表を読み込めませんでした。時間をおいて開き直してください。"); });
   dbm.onValue(dbm.ref(db, "config/teams"), snap => {
