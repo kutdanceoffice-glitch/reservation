@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D-kuts 練習場所予約</title>
+<style>
+:root{
+  --bg:#f5f6fa; --panel:#ffffff; --ink:#20232a; --muted:#697386; --line:#e3e6ee; --cell:#edf0f5; --head:#f0f3f9;
+  --btn-line:#cbd2df; --primary:#252c44; --primary-ink:#ffffff;
+  --free-bg:#e8f4ed; --free-line:#b9dfc8; --free-ink:#185d36;
+  --busy-bg:#fff0e8; --busy-line:#f3c5a9; --busy-ink:#86431d;
+  --mine-bg:#eceaff; --mine-line:#c9c1ff; --mine-ink:#44358b;
+  --sel-bg:#252c44; --sel-ink:#ffffff;
+  --block-bg:#eceef2; --block-ink:#7c8494;
+  --notice-bg:#fff8e5; --notice-ink:#795d17; --err-bg:#fde9e7; --err-ink:#9b2c1f;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1220; --panel:#181c2e; --ink:#e8eaf2; --muted:#9aa1b5; --line:#2a3046; --cell:#242a3f; --head:#1f2438;
+    --btn-line:#39405a; --primary:#e8eaf2; --primary-ink:#0f1220;
+    --free-bg:#163323; --free-line:#2a5a3e; --free-ink:#8fdcb0;
+    --busy-bg:#3a2417; --busy-line:#6b3f25; --busy-ink:#ffbf95;
+    --mine-bg:#2a2650; --mine-line:#4c43a0; --mine-ink:#c9c1ff;
+    --sel-bg:#e8eaf2; --sel-ink:#0f1220;
+    --block-bg:#22273a; --block-ink:#8a91a6;
+    --notice-bg:#3a2f14; --notice-ink:#f2d58b; --err-bg:#3d1c1a; --err-ink:#ffb4aa;
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+body{padding:16px;max-width:1240px;margin-inline:auto;padding-bottom:96px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:1.45rem;margin:0}
+.sub{color:var(--muted);margin:.35rem 0 0;font-size:.9rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px #17203308}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button,input,select,textarea{font:inherit;border:1px solid var(--btn-line);border-radius:10px;padding:9px 11px;background:var(--panel);color:inherit}
+button{cursor:pointer}
+button.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+button.danger{color:var(--err-ink);border-color:var(--err-ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.small{padding:6px 10px;font-size:.85rem}
+.date-label{font-weight:700;min-width:150px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px;border:1px solid}
+.lg-free{background:var(--free-bg);border-color:var(--free-line)!important}
+.lg-busy{background:var(--busy-bg);border-color:var(--busy-line)!important}
+.lg-mine{background:var(--mine-bg);border-color:var(--mine-line)!important}
+.lg-sel{background:var(--sel-bg);border-color:var(--sel-bg)!important}
+.user{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.9rem}
+.badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--primary);color:var(--primary-ink)}
+.tabs{display:none;gap:6px;margin-bottom:12px;overflow-x:auto}
+.tabs button{flex:1 1 0;min-width:0;padding:8px 2px;font-size:.8rem;border-radius:999px;white-space:nowrap}
+.tabs button[aria-pressed=true]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);font-weight:700}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.day{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.day h2{margin:0;font-size:1rem;padding:10px 12px;background:var(--head);border-bottom:1px solid var(--line)}
+.day h2 small{color:var(--muted);font-weight:400;margin-left:6px}
+.grid{display:grid;grid-template-columns:58px repeat(3,1fr)}
+.cell{padding:5px;border-bottom:1px solid var(--cell);border-right:1px solid var(--cell);min-height:50px;display:flex;align-items:center;justify-content:center}
+.cell:nth-child(4n){border-right:0}
+.colhead{font-weight:700;font-size:.85rem;background:var(--head);min-height:36px}
+.time{font-weight:650;color:var(--muted);font-size:.85rem}
+.book{width:100%;min-height:40px;white-space:normal;font-size:.8rem;padding:4px;line-height:1.25;background:var(--free-bg);border-color:var(--free-line);color:var(--free-ink)}
+.book.busy{background:var(--busy-bg);border-color:var(--busy-line);color:var(--busy-ink)}
+.book.mine{background:var(--mine-bg);border-color:var(--mine-line);color:var(--mine-ink)}
+.book.block{background:var(--block-bg);border-color:var(--line);color:var(--block-ink)}
+.book.sel{background:var(--sel-bg);border-color:var(--sel-bg);color:var(--sel-ink);font-weight:700}
+.book small{display:block;font-size:.7rem;opacity:.85}
+.empty{font-size:.8rem;color:var(--muted);opacity:.6}
+.notice{padding:10px 12px;background:var(--notice-bg);border-radius:10px;color:var(--notice-ink);font-size:.85rem;line-height:1.6}
+.error{padding:10px 12px;background:var(--err-bg);border-radius:10px;color:var(--err-ink);font-size:.9rem;margin-bottom:12px}
+.selbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 24px #0002;padding:12px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.selbar b{margin-right:4px}
+dialog{border:0;border-radius:16px;width:min(460px,calc(100% - 24px));padding:20px;box-shadow:0 20px 70px #0003;background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:#14182499}
+dialog h2{margin-top:0;font-size:1.15rem}
+form{display:grid;gap:12px}
+label{display:grid;gap:5px;font-size:.9rem;font-weight:600}
+label input,label select,label textarea{width:100%;font-weight:400}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;font-size:.82rem}
+.chips span{background:var(--head);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+.radio{display:flex;gap:12px;flex-wrap:wrap;font-weight:400}
+.radio label{display:flex;gap:4px;align-items:center;font-weight:400}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cell);font-size:.9rem}
+.list li:last-child{border-bottom:0}
+.muted{color:var(--muted)}
+.log{font-size:.82rem;max-height:420px;overflow:auto}
+.log li{display:block}
+h3{margin:0 0 10px;font-size:1rem}
+details summary{cursor:pointer;font-weight:700}
+.footer{color:var(--muted);font-size:.78rem;text-align:center;padding:10px}
+@media(max-width:720px){
+  body{padding:10px;padding-bottom:110px}
+  h1{font-size:1.2rem}
+  .panel{padding:10px}
+  .tabs{display:flex}
+  .days{grid-template-columns:1fr}
+  .day:not(.show){display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🎵 D-kuts 練習場所予約</h1>
+    <p class="sub">手前・真ん中・奥｜平日 18:00〜22:00｜30分単位｜14日先まで</p>
+  </div>
+  <div class="user" id="user"></div>
+</header>
+
+<div id="err" class="error" hidden></div>
+
+<div class="panel">
+  <div class="controls" style="justify-content:space-between">
+    <div class="controls">
+      <button id="prev">‹ 前の週</button>
+      <button id="today" class="primary">今週</button>
+      <button id="next">次の週 ›</button>
+      <span class="date-label" id="range"></span>
+    </div>
+    <div class="legend">
+      <span><i class="lg-free"></i>空き</span>
+      <span><i class="lg-busy"></i>予約済み</span>
+      <span><i class="lg-mine"></i>自分の予約</span>
+      <span><i class="lg-sel"></i>選択中</span>
+    </div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="days" id="days"></div>
+
+<div class="panel" id="minePanel" hidden style="margin-top:14px">
+  <h3>自分の予約</h3>
+  <ul class="list" id="mineList"></ul>
+</div>
+
+<div class="panel" id="adminPanel" hidden style="margin-top:14px">
+  <h3>公式アカウントのメニュー</h3>
+  <details>
+    <summary>予約の記録</summary>
+    <ul class="list log" id="logList"><li class="muted">読み込み中…</li></ul>
+  </details>
+  <details style="margin-top:12px">
+    <summary>選べるチームの一覧</summary>
+    <form id="teamsForm" style="margin-top:10px">
+      <label>1行に1チーム
+        <textarea id="teamsText" rows="10"></textarea>
+      </label>
+      <div class="form-actions"><button class="primary" type="submit">保存</button></div>
+    </form>
+  </details>
+  <details style="margin-top:12px">
+    <summary>クルーの固定枠を入れる</summary>
+    <form id="crewForm" style="margin-top:10px">
+      <p class="sub" style="margin:0">鏡前使用スケジュール（毎週同じ）を、期間内の平日に入れます。すでに予約がある枠は飛ばします。</p>
+      <div class="controls">
+        <label>から<input type="date" id="crewFrom" value="2026-11-09"></label>
+        <label>まで<input type="date" id="crewTo" value="2026-12-18"></label>
+      </div>
+      <div class="form-actions"><button class="primary" type="submit">固定枠を入れる</button></div>
+      <p class="sub" id="crewMsg" style="margin:0"></p>
+    </form>
+  </details>
+  <p class="sub">使用不可にしたい枠は、表で選んで「予約する」から種類を「使用不可」にしてください。どの予約も、押すと取り消し・変更できます。</p>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="notice">
+    空いている枠をタップして選び（いくつでも選べます）、下の「予約する」を押してください。予約にはGoogleでのログインが必要です。<br>
+    予約を取り消せるのは、予約した本人と公式アカウントだけです。クルーの固定枠は公式アカウントが管理します。
+  </div>
+</div>
+
+<div class="footer">D-kuts 共有予約表</div>
+
+<div class="selbar" id="selbar" hidden>
+  <span><b id="selCount">0</b>枠を選択中</span>
+  <button id="selClear">選択をやめる</button>
+  <button id="selGo" class="primary">予約する</button>
+</div>
+
+<dialog id="dlg">
+  <h2>練習場所を予約</h2>
+  <form id="bookingform">
+    <div class="chips" id="selChips"></div>
+    <label>チーム
+      <select id="teamSel"></select>
+    </label>
+    <label id="teamFreeWrap" hidden>チーム名（自由に書く）
+      <input id="teamFree" maxlength="40" placeholder="例：新しいチーム">
+    </label>
+    <label>予約者名（ニックネーム可）
+      <input id="person" maxlength="40" required placeholder="例：ゆき">
+    </label>
+    <div id="kindWrap" hidden>
+      <span style="font-size:.9rem;font-weight:600">種類（公式アカウントのみ）</span>
+      <div class="radio">
+        <label><input type="radio" name="kind" value="team" checked>ふつうの予約</label>
+        <label><input type="radio" name="kind" value="crew">クルーの固定枠</label>
+        <label><input type="radio" name="kind" value="block">使用不可</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" id="cancel">閉じる</button>
+      <button class="primary" type="submit" id="submitBtn">予約する</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="info">
+  <h2 id="infoTitle">予約の内容</h2>
+  <form id="infoForm">
+    <p class="sub" id="infoWhen" style="margin:0"></p>
+    <label>チーム<input id="infoTeam" maxlength="40" readonly></label>
+    <label>予約者名<input id="infoPerson" maxlength="40" readonly></label>
+    <p class="sub" id="infoMeta" style="margin:0"></p>
+    <div class="form-actions">
+      <button type="button" id="infoClose">閉じる</button>
+      <button type="button" id="infoSave" hidden>変更を保存</button>
+      <button type="button" id="infoDel" class="danger" hidden>取り消す</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+/* ============ 設定 ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBTjI9XqoIGPlX_WsybODbRFZyW1_8rtYI",
+  authDomain: "dkuts-reservation.firebaseapp.com",
+  databaseURL: "https://dkuts-reservation-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "dkuts-reservation",
+  storageBucket: "dkuts-reservation.firebasestorage.app",
+  messagingSenderId: "636575367300",
+  appId: "1:636575367300:web:d695ecc733148bc29342d1"
+};
+const OFFICIAL = "kut.dance.office@gmail.com";   // 公式アカウント（管理者）
+const ROOMS = ["手前","真ん中","奥"];
+const TIMES = ["1800","1830","1900","1930","2000","2030","2100","2130"];
+const MAX_DAYS = 14;        // 何日先まで予約できるか
+const MAX_WEEKS = 2;        // 部員が見られる週（今週＋2週）
+const DEFAULT_TEAMS = ["hiphop","ガールズ","ナムジャ","ブレイク","ヨジャ","riizefame","AURA","NCTシズニ","cRage 4's","Lazy Boys","FLEUR","Money","Soror³","NEEDS","One more time"];
+// クルーの鏡前使用スケジュール（クリスマスイベント用）。曜日(1=月)→ [時, 場所の番号(0手前 1真ん中 2奥), クルー]
+const CREW = {
+  1:[[18,0,"hiphop"],[19,0,"hiphop"],[19,2,"ナムジャ"],[20,0,"ブレイク"],[21,1,"ブレイク"]],
+  2:[[18,0,"ガールズ"],[19,0,"ガールズ"],[20,0,"hiphop"],[21,0,"hiphop"]],
+  3:[[18,0,"ナムジャ"],[18,2,"ブレイク"],[19,0,"ナムジャ"],[19,1,"ブレイク"],[20,2,"ヨジャ"],[21,0,"ガールズ"]],
+  4:[[19,0,"ヨジャ"],[20,0,"ヨジャ"]],
+  5:[[18,0,"ヨジャ"],[18,2,"ブレイク"],[19,0,"ナムジャ"],[19,1,"ブレイク"],[19,2,"ヨジャ"],[20,2,"ナムジャ"],[21,0,"ガールズ"]]
+};
+
+/* ============ 状態 ============ */
+let fb = null;               // Firebase の関数
+let db = null, auth = null, user = null;
+let bookings = {};           // {date:{slot:{...}}}
+let teams = DEFAULT_TEAMS.slice();
+let weekOffset = 0, dayTab = null;
+const selected = new Map();  // "date|slot" -> {date,slot}
+const $ = id => document.getElementById(id);
+const isAdmin = () => !!(user && user.email === OFFICIAL && user.emailVerified);
+
+/* ============ 日付 ============ */
+const pad = n => String(n).padStart(2,"0");
+const dateStr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseDate = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const WD = ["日","月","火","水","木","金","土"];
+const dateLabel = s => { const d = parseDate(s); return `${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`; };
+const timeLabel = t => `${t.slice(0,2)}:${t.slice(2)}`;
+const slotKey = (room,t) => `r${room}_${t}`;
+const slotLabel = k => { const [r,t] = k.split("_"); return `${ROOMS[Number(r.slice(1))]} ${timeLabel(t)}〜${endOf(t)}`; };
+const endOf = t => { let h = Number(t.slice(0,2)), m = Number(t.slice(2)) + 30; if (m >= 60) { h++; m -= 60; } return `${pad(h)}:${pad(m)}`; };
+function mondayOf(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+function weekStart(){ const b = mondayOf(new Date()); b.setDate(b.getDate() + weekOffset*7); return b; }
+function canBook(ds, t){
+  const d = parseDate(ds), now = new Date(), today = new Date(); today.setHours(0,0,0,0);
+  if (d.getDay() < 1 || d.getDay() > 5) return false;
+  if (d < today) return false;
+  if (!isAdmin()) { const max = new Date(today); max.setDate(max.getDate() + MAX_DAYS); if (d > max) return false; }
+  if (dateStr(d) === dateStr(now)) { const h = Number(t.slice(0,2)), m = Number(t.slice(2)); if (h*60+m <= now.getHours()*60+now.getMinutes()) return false; }
+  return true;
+}
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function showErr(msg){ const e = $("err"); e.textContent = msg || ""; e.hidden = !msg; if (msg) window.scrollTo({top:0,behavior:"smooth"}); }
+
+/* ============ 表示 ============ */
+function render(){
+  const start = weekStart(), end = new Date(start); end.setDate(end.getDate()+4);
+  $("range").textContent = `${dateLabel(dateStr(start))} 〜 ${dateLabel(dateStr(end))}`;
+  $("prev").disabled = weekOffset <= 0;
+  $("next").disabled = weekOffset >= (isAdmin() ? 7 : MAX_WEEKS);
+
+  const days = [];
+  for (let i = 0; i < 5; i++) { const d = new Date(start); d.setDate(d.getDate()+i); days.push(dateStr(d)); }
+  if (!dayTab || !days.includes(dayTab)) { const t = dateStr(new Date()); dayTab = days.includes(t) ? t : days[0]; }
+
+  $("tabs").innerHTML = days.map(ds => { const d = parseDate(ds); return `<button data-tab="${ds}" aria-pressed="${ds === dayTab}">${d.getDate()}日（${WD[d.getDay()]}）</button>`; }).join("");
+
+  $("days").innerHTML = days.map(ds => {
+    const day = bookings[ds] || {};
+    let h = `<section class="day${ds === dayTab ? " show" : ""}"><h2>${dateLabel(ds)}</h2><div class="grid">`;
+    h += `<div class="cell colhead">時間</div>` + ROOMS.map(r => `<div class="cell colhead">${r}</div>`).join("");
+    TIMES.forEach(t => {
+      h += `<div class="cell time">${timeLabel(t)}</div>`;
+      ROOMS.forEach((_, ri) => {
+        const k = slotKey(ri, t), b = day[k], id = `${ds}|${k}`;
+        if (b) {
+          const cls = b.kind === "block" ? "block" : (user && b.uid === user.uid && b.kind === "team" ? "mine" : "busy");
+          const label = b.kind === "block" ? `使用不可<small>${esc(b.team)}</small>` : `${esc(b.team)}<small>${b.kind === "crew" ? "クルー枠" : esc(b.person)}</small>`;
+          h += `<div class="cell"><button class="book ${cls}" data-info="${id}">${label}</button></div>`;
+        } else if (canBook(ds, t)) {
+          h += `<div class="cell"><button class="book${selected.has(id) ? " sel" : ""}" data-pick="${id}">${selected.has(id) ? "✓ 選択中" : "＋"}</button></div>`;
+        } else {
+          h += `<div class="cell"><span class="empty">—</span></div>`;
+        }
+      });
+    });
+    return h + `</div></section>`;
+  }).join("");
+
+  // 選択バー
+  $("selbar").hidden = selected.size === 0;
+  $("selCount").textContent = selected.size;
+
+  renderUser();
+  renderMine();
+  $("adminPanel").hidden = !isAdmin();
+}
+
+function renderUser(){
+  const u = $("user");
+  if (!fb) { u.innerHTML = `<span class="muted">接続中…</span>`; return; }
+  if (!user) { u.innerHTML = `<button class="primary" id="login">Googleでログイン</button>`; $("login").onclick = login; return; }
+  u.innerHTML = `${isAdmin() ? '<span class="badge">公式</span>' : ""}<span>${esc(user.displayName || user.email)}</span><button class="small" id="logout">ログアウト</button>`;
+  $("logout").onclick = () => fb.signOut(auth);
+}
+
+function renderMine(){
+  if (!user) { $("minePanel").hidden = true; return; }
+  const today = dateStr(new Date()), items = [];
+  Object.keys(bookings).sort().forEach(ds => {
+    if (ds < today) return;
+    Object.keys(bookings[ds]).sort((a,b) => a.split("_")[1].localeCompare(b.split("_")[1]) || a.localeCompare(b)).forEach(k => {
+      const b = bookings[ds][k];
+      if (b.uid === user.uid && b.kind === "team") items.push({ds, k, b});
+    });
+  });
+  $("minePanel").hidden = false;
+  $("mineList").innerHTML = items.length
+    ? items.map(x => `<li><span>${dateLabel(x.ds)} ${slotLabel(x.k)}<br><span class="muted">${esc(x.b.team)}・${esc(x.b.person)}</span></span><button class="small danger" data-del="${x.ds}|${x.k}">取り消す</button></li>`).join("")
+    : `<li class="muted">これからの予約はありません</li>`;
+}
+
+/* ============ 操作 ============ */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.tab) { dayTab = t.dataset.tab; render(); return; }
+  if (t.dataset.pick) {
+    const id = t.dataset.pick;
+    if (!user) { login(); return; }
+    if (selected.has(id)) selected.delete(id); else { const [date, slot] = id.split("|"); selected.set(id, {date, slot}); }
+    render(); return;
+  }
+  if (t.dataset.info) { openInfo(t.dataset.info); return; }
+  if (t.dataset.del) { const [ds, k] = t.dataset.del.split("|"); cancelBooking(ds, [k]); return; }
+});
+$("prev").onclick = () => { weekOffset = Math.max(0, weekOffset-1); dayTab = null; render(); };
+$("next").onclick = () => { weekOffset = Math.min(isAdmin() ? 7 : MAX_WEEKS, weekOffset+1); dayTab = null; render(); };
+$("today").onclick = () => { weekOffset = 0; dayTab = null; render(); };
+$("selClear").onclick = () => { selected.clear(); render(); };
+$("selGo").onclick = openBooking;
+$("cancel").onclick = () => $("dlg").close();
+$("infoClose").onclick = () => $("info").close();
+
+async function login(){
+  if (!fb) return;
+  try {
+    await fb.signInWithPopup(auth, new fb.GoogleAuthProvider());
+  } catch (e) {
+    if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) {
+      await fb.signInWithRedirect(auth, new fb.GoogleAuthProvider());
+    } else if (!(e && e.code === "auth/popup-closed-by-user")) {
+      showErr("ログインできませんでした。もう一度試してください。（" + (e && e.code || e) + "）");
+    }
+  }
+}
+
+function fillTeams(){
+  $("teamSel").innerHTML = `<option value="">選んでください</option>` + teams.map(t => `<option>${esc(t)}</option>`).join("") + `<option value="__free">その他（自由に書く）</option>`;
+}
+$("teamSel").onchange = () => { $("teamFreeWrap").hidden = $("teamSel").value !== "__free"; };
+
+function openBooking(){
+  if (!user) { login(); return; }
+  if (!selected.size) return;
+  const list = [...selected.values()].sort((a,b) => (a.date+a.slot.split("_")[1]+a.slot).localeCompare(b.date+b.slot.split("_")[1]+b.slot));
+  $("selChips").innerHTML = list.map(x => `<span>${dateLabel(x.date)} ${slotLabel(x.slot)}</span>`).join("");
+  fillTeams();
+  $("teamFreeWrap").hidden = true; $("teamFree").value = "";
+  $("person").value = user.displayName || "";
+  $("kindWrap").hidden = !isAdmin();
+  document.querySelector('input[name="kind"][value="team"]').checked = true;
+  $("submitBtn").disabled = false;
+  $("dlg").showModal();
+}
+
+$("bookingform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const sel = $("teamSel").value;
+  const team = (sel === "__free" ? $("teamFree").value : sel).trim();
+  const person = $("person").value.trim();
+  const kind = isAdmin() ? document.querySelector('input[name="kind"]:checked').value : "team";
+  if (!team) { alert("チームを選ぶか、チーム名を書いてください。"); return; }
+  if (!person) { alert("予約者名を書いてください。"); return; }
+  const list = [...selected.values()];
+  // 画面上ですでに埋まっている枠
+  const taken = list.filter(x => bookings[x.date] && bookings[x.date][x.slot]);
+  if (taken.length) { alert("次の枠はさっき予約されました。選び直してください。\n" + taken.map(x => `${dateLabel(x.date)} ${slotLabel(x.slot)}`).join("\n")); taken.forEach(x => selected.delete(`${x.date}|${x.slot}`)); $("dlg").close(); render(); return; }
+  const updates = {}, now = Date.now();
+  list.forEach(x => { updates[`bookings/${x.date}/${x.slot}`] = { team, person, uid: user.uid, kind, createdAt: now }; });
+  addLog(updates, kind === "team" ? "予約" : kind === "crew" ? "クルー枠" : "使用不可", list, team, person);
+  $("submitBtn").disabled = true;
+  try {
+    await fb.update(fb.ref(db), updates);   // 全部入るか、1つも入らないか（同時に予約されたら失敗する）
+    selected.clear(); $("dlg").close(); showErr("");
+  } catch (err) {
+    console.error(err);
+    alert("予約できませんでした。選んだ枠のどれかが、さっき別の人に予約された可能性があります。表を確認して選び直してください。");
+    list.forEach(x => { if (bookings[x.date] && bookings[x.date][x.slot]) selected.delete(`${x.date}|${x.slot}`); });
+    $("dlg").close();
+  }
+  render();
+});
+
+function addLog(updates, action, list, team, person){
+  const key = fb.push(fb.ref(db, "logs")).key;
+  updates[`logs/${key}`] = {
+    at: fb.serverTimestamp(), uid: user.uid, name: user.displayName || "", email: user.email || "",
+    action, team: team || "", person: person || "",
+    items: list.map(x => `${x.date} ${slotLabel(x.slot)}`).join(" / ")
+  };
+}
+
+let infoTarget = null;
+function openInfo(id){
+  const [ds, k] = id.split("|"), b = (bookings[ds] || {})[k]; if (!b) return;
+  infoTarget = {ds, k, b};
+  const mine = user && b.uid === user.uid && b.kind === "team";
+  $("infoTitle").textContent = b.kind === "block" ? "使用不可の枠" : b.kind === "crew" ? "クルーの固定枠" : "予約の内容";
+  $("infoWhen").textContent = `${dateLabel(ds)} ${slotLabel(k)}`;
+  $("infoTeam").value = b.team; $("infoPerson").value = b.person;
+  $("infoTeam").readOnly = $("infoPerson").readOnly = !isAdmin();
+  $("infoMeta").textContent = b.createdAt ? `登録：${new Date(b.createdAt).toLocaleString("ja-JP")}` : "";
+  $("infoDel").hidden = !(mine || isAdmin());
+  $("infoSave").hidden = !isAdmin();
+  $("info").showModal();
+}
+$("infoDel").onclick = async () => {
+  const {ds, k, b} = infoTarget;
+  if (!confirm(`この予約（${b.team}・${dateLabel(ds)} ${slotLabel(k)}）を取り消しますか？`)) return;
+  $("info").close(); await cancelBooking(ds, [k], true);
+};
+$("infoSave").onclick = async () => {
+  const {ds, k, b} = infoTarget, team = $("infoTeam").value.trim(), person = $("infoPerson").value.trim();
+  if (!team) { alert("チーム名を入れてください。"); return; }
+  const updates = { [`bookings/${ds}/${k}`]: { ...b, team, person } };
+  addLog(updates, "変更", [{date: ds, slot: k}], team, person);
+  try { await fb.update(fb.ref(db), updates); $("info").close(); } catch (err) { console.error(err); alert("変更できませんでした。"); }
+};
+
+async function cancelBooking(ds, keys, confirmed){
+  const b = (bookings[ds] || {})[keys[0]];
+  if (!b) return;
+  if (!confirmed && !confirm(`この予約（${b.team}・${dateLabel(ds)} ${slotLabel(keys[0])}）を取り消しますか？`)) return;
+  const updates = {};
+  keys.forEach(k => { updates[`bookings/${ds}/${k}`] = null; });
+  addLog(updates, "取り消し", keys.map(k => ({date: ds, slot: k})), b.team, b.person);
+  try { await fb.update(fb.ref(db), updates); } catch (err) { console.error(err); alert("取り消せませんでした。予約した本人か公式アカウントだけが取り消せます。"); }
+}
+
+/* ============ 公式アカウントのメニュー ============ */
+$("teamsForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const list = $("teamsText").value.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 100);
+  try { await fb.set(fb.ref(db, "config/teams"), list); alert("保存しました。"); } catch (err) { console.error(err); alert("保存できませんでした。"); }
+});
+$("crewForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const from = $("crewFrom").value, to = $("crewTo").value;
+  if (!from || !to || from > to) { alert("期間を正しく入れてください。"); return; }
+  if (!confirm(`${from} 〜 ${to} の平日に、クルーの固定枠を入れますか？`)) return;
+  const updates = {}, list = [], skipped = [], now = Date.now();
+  for (let d = parseDate(from); dateStr(d) <= to; d.setDate(d.getDate()+1)) {
+    const ds = dateStr(d), rows = CREW[d.getDay()]; if (!rows) continue;
+    rows.forEach(([h, room, crew]) => ["00","30"].forEach(m => {
+      const k = slotKey(room, `${h}${m}`);
+      if (bookings[ds] && bookings[ds][k]) { skipped.push(`${ds} ${slotLabel(k)}`); return; }
+      updates[`bookings/${ds}/${k}`] = { team: crew, person: "クルー", uid: user.uid, kind: "crew", createdAt: now };
+      list.push({date: ds, slot: k});
+    }));
+  }
+  if (!list.length) { $("crewMsg").textContent = "入れる枠がありませんでした（すでに入っています）。"; return; }
+  addLog(updates, "クルー枠（まとめて）", [], "クルー", `${from}〜${to}（${list.length}枠）`);
+  try {
+    await fb.update(fb.ref(db), updates);
+    $("crewMsg").textContent = `${list.length}枠を入れました。` + (skipped.length ? `すでに予約があったので飛ばした枠：${skipped.length}枠` : "");
+  } catch (err) { console.error(err); alert("入れられませんでした。"); }
+});
+function watchLogs(){
+  fb.onValue(fb.query(fb.ref(db, "logs"), fb.limitToLast(300)), snap => {
+    const v = snap.val() || {};
+    const rows = Object.values(v).sort((a,b) => (b.at||0) - (a.at||0));
+    $("logList").innerHTML = rows.length ? rows.map(r => `<li><b>${esc(r.action)}</b>　${r.at ? new Date(r.at).toLocaleString("ja-JP") : ""}<br>${esc(r.name)}（${esc(r.email)}）<br><span class="muted">${esc(r.team)}・${esc(r.person)}　${esc(r.items)}</span></li>`).join("") : `<li class="muted">まだ記録はありません</li>`;
+  }, err => { console.error(err); $("logList").innerHTML = `<li class="muted">記録を読み込めませんでした</li>`; });
+}
+
+/* ============ 起動 ============ */
+render();
+try {
+  const V = "10.12.2";
+  const app = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const dbm = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-database.js`);
+  const am = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  fb = { ...dbm, ...am };
+  const a = app.initializeApp(firebaseConfig);
+  db = dbm.getDatabase(a); auth = am.getAuth(a);
+  try { await am.getRedirectResult(auth); } catch (e) { console.error(e); }
+
+  // 今週の月曜から8週間分の予約を見る（変わったらすぐ反映）
+  const from = mondayOf(new Date()), to = new Date(from); to.setDate(to.getDate() + 8*7);
+  dbm.onValue(dbm.query(dbm.ref(db, "bookings"), dbm.orderByKey(), dbm.startAt(dateStr(from)), dbm.endAt(dateStr(to))), snap => {
+    bookings = snap.val() || {};
+    // ほかの人に取られた枠は選択から外す
+    [...selected.keys()].forEach(id => { const [d, k] = id.split("|"); if (bookings[d] && bookings[d][k]) selected.delete(id); });
+    render();
+  }, err => { console.error(err); showErr("予約表を読み込めませんでした。時間をおいて開き直してください。"); });
+  dbm.onValue(dbm.ref(db, "config/teams"), snap => {
+    const v = snap.val(); teams = Array.isArray(v) && v.length ? v : DEFAULT_TEAMS.slice();
+    $("teamsText").value = teams.join("\n");
+  });
+
+  let logsOn = false;
+  am.onAuthStateChanged(auth, u => {
+    user = u;
+    if (!u) selected.clear();
+    if (isAdmin() && !logsOn) { logsOn = true; watchLogs(); }
+    render();
+  });
+} catch (e) {
+  console.error(e);
+  showErr("予約システムに接続できませんでした。電波を確認して、ページを開き直してください。");
+}
+render();
+</script>
+</body>
+</html>
