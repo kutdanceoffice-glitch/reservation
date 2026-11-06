@@ -111,7 +111,7 @@ details summary{cursor:pointer;font-weight:700}
 <header>
   <div>
     <h1>🎵 D-kuts 練習場所予約</h1>
-    <p class="sub">手前・真ん中・奥｜平日 18:00〜22:00｜30分単位｜14日先まで</p>
+    <p class="sub">手前・真ん中・奥｜平日 18:00〜22:00｜30分単位｜12/18（クリスマス）まで予約できます</p>
   </div>
   <div class="user" id="user"></div>
 </header>
@@ -245,8 +245,8 @@ const firebaseConfig = {
 const OFFICIAL = "kut.dance.office@gmail.com";   // 公式アカウント（管理者）
 const ROOMS = ["手前","真ん中","奥"];
 const TIMES = ["1800","1830","1900","1930","2000","2030","2100","2130"];
-const MAX_DAYS = 14;        // 何日先まで予約できるか
-const MAX_WEEKS = 2;        // 部員が見られる週（今週＋2週）
+const MAX_DAYS = 14;        // ふだんは何日先まで予約できるか
+const OPEN_UNTIL = "2026-12-18";   // この日までは、14日より先でも予約できる（クリスマスイベント）
 const DEFAULT_TEAMS = ["hiphop","ガールズ","ナムジャ","ブレイク","ヨジャ","riizefame","AURA","NCTシズニ","cRage 4's","Lazy Boys","FLEUR","Money","Soror³","NEEDS","One more time"];
 // クルーの鏡前使用スケジュール（クリスマスイベント用）。曜日(1=月)→ [時, 場所の番号(0手前 1真ん中 2奥), クルー]
 const CREW = {
@@ -278,12 +278,16 @@ const slotKey = (room,t) => `r${room}_${t}`;
 const slotLabel = k => { const [r,t] = k.split("_"); return `${ROOMS[Number(r.slice(1))]} ${timeLabel(t)}〜${endOf(t)}`; };
 const endOf = t => { let h = Number(t.slice(0,2)), m = Number(t.slice(2)) + 30; if (m >= 60) { h++; m -= 60; } return `${pad(h)}:${pad(m)}`; };
 function mondayOf(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+/** 予約できる最後の日（今日＋14日と、クリスマスまでの遅いほう） */
+function lastBookable(){ const t = new Date(); t.setHours(0,0,0,0); t.setDate(t.getDate() + MAX_DAYS); const o = parseDate(OPEN_UNTIL); return o > t ? o : t; }
+/** 部員が見られる週の数（今週から何週先まで） */
+function maxWeeks(){ return Math.max(2, Math.round((mondayOf(lastBookable()) - mondayOf(new Date())) / (7*864e5))); }
 function weekStart(){ const b = mondayOf(new Date()); b.setDate(b.getDate() + weekOffset*7); return b; }
 function canBook(ds, t){
   const d = parseDate(ds), now = new Date(), today = new Date(); today.setHours(0,0,0,0);
   if (d.getDay() < 1 || d.getDay() > 5) return false;
   if (d < today) return false;
-  if (!isAdmin()) { const max = new Date(today); max.setDate(max.getDate() + MAX_DAYS); if (d > max) return false; }
+  if (!isAdmin() && d > lastBookable()) return false;
   if (dateStr(d) === dateStr(now)) { const h = Number(t.slice(0,2)), m = Number(t.slice(2)); if (h*60+m <= now.getHours()*60+now.getMinutes()) return false; }
   return true;
 }
@@ -295,7 +299,7 @@ function render(){
   const start = weekStart(), end = new Date(start); end.setDate(end.getDate()+4);
   $("range").textContent = `${dateLabel(dateStr(start))} 〜 ${dateLabel(dateStr(end))}`;
   $("prev").disabled = weekOffset <= 0;
-  $("next").disabled = weekOffset >= (isAdmin() ? 7 : MAX_WEEKS);
+  $("next").disabled = weekOffset >= (isAdmin() ? Math.max(7, maxWeeks()) : maxWeeks());
 
   const days = [];
   for (let i = 0; i < 5; i++) { const d = new Date(start); d.setDate(d.getDate()+i); days.push(dateStr(d)); }
@@ -372,7 +376,7 @@ document.addEventListener("click", e => {
   if (t.dataset.del) { const [ds, k] = t.dataset.del.split("|"); cancelBooking(ds, [k]); return; }
 });
 $("prev").onclick = () => { weekOffset = Math.max(0, weekOffset-1); dayTab = null; render(); };
-$("next").onclick = () => { weekOffset = Math.min(isAdmin() ? 7 : MAX_WEEKS, weekOffset+1); dayTab = null; render(); };
+$("next").onclick = () => { weekOffset = Math.min(isAdmin() ? Math.max(7, maxWeeks()) : maxWeeks(), weekOffset+1); dayTab = null; render(); };
 $("today").onclick = () => { weekOffset = 0; dayTab = null; render(); };
 $("selClear").onclick = () => { selected.clear(); render(); };
 $("selGo").onclick = openBooking;
