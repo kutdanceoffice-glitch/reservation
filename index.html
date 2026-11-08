@@ -117,6 +117,13 @@ button{cursor:pointer}
 .slot{padding:3px;min-height:var(--row);border-top:1px solid var(--raise)}
 .slot.hour{border-top-color:var(--line)}
 .slot.first{border-left:1px solid var(--line)}
+.slot.off{background:var(--raise)}
+.closedmsg{padding:28px 16px;text-align:center;color:var(--muted);font-weight:600}
+.grid.dense .s{padding:3px 4px}
+.grid.dense .s .team{font-size:.74rem;overflow-wrap:anywhere;word-break:normal}
+.grid.dense .s .who{font-size:.66rem}
+.grid.dense .s .when{font-size:.74rem}
+.grid.dense .h-lane{font-size:.72rem}
 .slot.todaycol{background:color-mix(in srgb, var(--amber-soft) 45%, transparent)}
 .s{width:100%;height:100%;min-height:calc(var(--row) - 6px);border-radius:10px;border:0;padding:4px 6px;font-size:.8rem;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
 .s.free{background:var(--free);border:1.5px dashed var(--free-line);color:var(--free-ink);font-size:1.15rem;font-weight:500}
@@ -201,7 +208,7 @@ input,select,textarea{border:1px solid var(--line);border-radius:12px;padding:11
 <header class="top">
   <div class="brand">
     <h1><b>D-kuts</b>練習場所予約</h1>
-    <p>手前・真ん中・奥｜平日 18:00〜22:00｜12/18（クリスマス）まで予約できます</p>
+    <p>手前・真ん中・奥｜平日 18:00〜22:00｜クリスマスまでの土日 13:00〜22:00｜12/18まで予約できます</p>
   </div>
   <div class="user"><button class="btn small" id="jumpMine" hidden>自分の予約<span class="count" id="mineCount">0</span></button><span class="user" id="user"></span></div>
 </header>
@@ -343,7 +350,27 @@ const firebaseConfig = {
 };
 const OFFICIAL = "kut.dance.office@gmail.com";   // 公式アカウント（管理者）
 const ROOMS = ["手前","真ん中","奥"];
-const TIMES = ["1800","1830","1900","1930","2000","2030","2100","2130"];
+// 予約の枠（30分ずつ）。13:00〜21:30開始
+const ALL_TIMES = []; for (let h = 13; h <= 21; h++) ALL_TIMES.push(`${h}00`, `${h}30`);
+const WEEKDAY_TIMES = ALL_TIMES.filter(t => t >= "1800");   // 平日は18:00〜22:00
+// 特別な日：土日・祝日に使える日（from〜to）と、使えない日（closed＝理由）
+const SPECIAL = {
+  "2026-11-14": { from: "1300", to: "2200" }, "2026-11-15": { from: "1300", to: "2200" },
+  "2026-11-21": { from: "1300", to: "2200" }, "2026-11-22": { from: "1300", to: "2200" },
+  "2026-11-28": { from: "1300", to: "2200" }, "2026-11-29": { closed: "入試のため使えません" },
+  "2026-12-05": { from: "1300", to: "2200" }, "2026-12-06": { closed: "入試のため使えません" },
+  "2026-12-12": { from: "1300", to: "2200" }, "2026-12-13": { from: "1300", to: "2200" }
+};
+/** その日に予約できる時間の枠（使えない日は空） */
+function timesOf(ds){
+  const sp = SPECIAL[ds];
+  if (sp) return sp.closed ? [] : ALL_TIMES.filter(t => t >= sp.from && t < sp.to);
+  const wd = parseDate(ds).getDay();
+  return wd >= 1 && wd <= 5 ? WEEKDAY_TIMES : [];
+}
+const closedReason = ds => (SPECIAL[ds] && SPECIAL[ds].closed) || "";
+/** 表に出す日か（平日と、特別な日） */
+const dayShown = ds => { const wd = parseDate(ds).getDay(); return (wd >= 1 && wd <= 5) || !!SPECIAL[ds]; };
 const MAX_DAYS = 14;               // ふだんは何日先まで予約できるか
 const OPEN_UNTIL = "2026-12-18";   // この日までは、14日より先でも予約できる（クリスマスイベント）
 // 平日の祝日（表に「祝日」と出す。予約はふつうにできる）
@@ -394,11 +421,11 @@ function lastBookable(){ const t = new Date(); t.setHours(0,0,0,0); t.setDate(t.
 function maxWeeks(){ return Math.max(2, Math.round((mondayOf(lastBookable()) - mondayOf(new Date())) / (7*864e5))); }
 const weekLimit = () => isAdmin() ? Math.max(7, maxWeeks()) : maxWeeks();
 /** その日の練習時間が終わっているか */
-function dayOver(ds){ const today = dateStr(new Date()); return ds < today || (ds === today && nowMin() >= tMin(TIMES[TIMES.length-1]) + 30); }
+function dayOver(ds){ const today = dateStr(new Date()), ts = timesOf(ds); return ds < today || (ds === today && (!ts.length || nowMin() >= tMin(ts[ts.length-1]) + 30)); }
 function isPast(ds, t){ const today = dateStr(new Date()); return ds < today || (ds === today && tMin(t) + 30 <= nowMin()); }
 function canBook(ds, t){
   const d = parseDate(ds), today = new Date(); today.setHours(0,0,0,0);
-  if (d.getDay() < 1 || d.getDay() > 5) return false;
+  if (!timesOf(ds).includes(t)) return false;
   if (d < today) return false;
   if (!isAdmin() && d > lastBookable()) return false;
   if (ds === dateStr(new Date()) && tMin(t) <= nowMin()) return false;
@@ -409,8 +436,11 @@ function showErr(msg){ const e = $("err"); e.textContent = msg || ""; e.hidden =
 let toastTimer = null;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3000); }
 
-// 最初に出す週：土日や金曜の練習が終わったあとは次の週
-(function(){ const d = new Date(), wd = d.getDay(); if (wd === 0 || wd === 6 || (wd === 5 && dayOver(dateStr(d)))) weekOffset = 1; })();
+/** その週に表に出す日（月〜日のうち、平日と特別な日） */
+function weekDays(off){ const b = mondayOf(new Date()); b.setDate(b.getDate() + off*7); const out = []; for (let i = 0; i < 7; i++) { const d = new Date(b); d.setDate(d.getDate()+i); const ds = dateStr(d); if (dayShown(ds)) out.push(ds); } return out; }
+/** 最初に出す週：今週の使える日が全部終わっていたら次の週 */
+const firstWeek = () => weekDays(0).every(ds => dayOver(ds) || !timesOf(ds).length) ? 1 : 0;
+weekOffset = firstWeek();
 // Instagram などアプリの中のブラウザ（LINEは自動で開き直す）
 if (/Instagram|FBAN|FBAV|Twitter|TikTok/i.test(navigator.userAgent || "")) $("inapp").hidden = false;
 
@@ -418,43 +448,45 @@ if (/Instagram|FBAN|FBAV|Twitter|TikTok/i.test(navigator.userAgent || "")) $("in
 const sameRun = (a, b) => a && b && a.uid === b.uid && a.team === b.team && a.person === b.person && a.kind === b.kind;
 /** その日・その場所で、kの枠を含む「続けて取った予約」の枠一覧 */
 function runOf(ds, k){
-  const day = bookings[ds] || {}, r = roomOf(k), i = TIMES.indexOf(timeOf(k)), b = day[k];
+  const day = bookings[ds] || {}, r = roomOf(k), i = ALL_TIMES.indexOf(timeOf(k)), b = day[k];
   let s = i, e = i;
-  while (s > 0 && sameRun(day[slotKey(r, TIMES[s-1])], b)) s--;
-  while (e < TIMES.length-1 && sameRun(day[slotKey(r, TIMES[e+1])], b)) e++;
-  return TIMES.slice(s, e+1).map(t => slotKey(r, t));
+  while (s > 0 && sameRun(day[slotKey(r, ALL_TIMES[s-1])], b)) s--;
+  while (e < ALL_TIMES.length-1 && sameRun(day[slotKey(r, ALL_TIMES[e+1])], b)) e++;
+  return ALL_TIMES.slice(s, e+1).map(t => slotKey(r, t));
 }
 
 /* ============ 表示 ============ */
 /** その日の空き枠の数（予約できる枠だけ） */
-function freeCount(ds){ const day = bookings[ds] || {}; let n = 0; ROOMS.forEach((_, r) => TIMES.forEach(t => { if (!day[slotKey(r, t)] && canBook(ds, t)) n++; })); return n; }
+function freeCount(ds){ const day = bookings[ds] || {}; let n = 0; ROOMS.forEach((_, r) => timesOf(ds).forEach(t => { if (!day[slotKey(r, t)] && canBook(ds, t)) n++; })); return n; }
 const wide = () => window.matchMedia("(min-width:1100px)").matches;
 
 function render(){
-  const start = weekStart(), end = new Date(start); end.setDate(end.getDate()+4);
+  const days = weekDays(weekOffset), start = parseDate(days[0]), end = parseDate(days[days.length-1]);
   $("range").innerHTML = `${start.getMonth()+1}/${start.getDate()} – ${end.getMonth()+1}/${end.getDate()}<small>${weekOffset === 0 ? "今週" : weekOffset === 1 ? "来週" : weekOffset + "週間後"}</small>`;
   $("prev").disabled = weekOffset <= 0;
   $("next").disabled = weekOffset >= weekLimit();
   const todayS = dateStr(new Date());
 
-  const days = [];
-  for (let i = 0; i < 5; i++) { const d = new Date(start); d.setDate(d.getDate()+i); days.push(dateStr(d)); }
-  if (!dayTab || !days.includes(dayTab)) dayTab = days.find(ds => !dayOver(ds)) || days[0];
+  if (!dayTab || !days.includes(dayTab)) dayTab = days.find(ds => !dayOver(ds) && timesOf(ds).length) || days[0];
+  $("tabs").style.gridTemplateColumns = `repeat(${days.length}, 1fr)`;
 
   $("tabs").innerHTML = days.map(ds => { const d = parseDate(ds), f = freeCount(ds);
-    return `<button data-tab="${ds}" aria-pressed="${ds === dayTab}" class="${ds === todayS ? "today" : ""}" aria-label="${dateLabel(ds)} 空き${f}枠"><span class="d">${d.getDate()}</span><span class="w">${WD[d.getDay()]}${ds === todayS ? "・今日" : HOLIDAYS[ds] ? "・祝" : ""}</span><span class="f${f ? "" : " none"}">${f ? "空き" + f : dayOver(ds) ? "終了" : "空きなし"}</span></button>`; }).join("");
+    return `<button data-tab="${ds}" aria-pressed="${ds === dayTab}" class="${ds === todayS ? "today" : ""}" aria-label="${dateLabel(ds)} 空き${f}枠"><span class="d">${d.getDate()}</span><span class="w">${WD[d.getDay()]}${ds === todayS ? "・今日" : HOLIDAYS[ds] ? "・祝" : ""}</span><span class="f${f ? "" : " none"}">${closedReason(ds) ? "利用不可" : f ? "空き" + f : dayOver(ds) ? "終了" : "空きなし"}</span></button>`; }).join("");
 
   // 表：PCは1週間、スマホ・タブレットは1日
   const shown = wide() ? days : [dayTab];
   const grid = $("days");
   grid.style.gridTemplateColumns = `52px repeat(${shown.length * 3}, minmax(0, 1fr))`;
+  grid.classList.toggle("dense", shown.length > 5);
   let h = `<div style="grid-row:1 / span 2;grid-column:1"></div>`;
   shown.forEach((ds, di) => {
     const c0 = 2 + di * 3, isT = ds === todayS, d = parseDate(ds);
-    h += `<div class="h-day${isT ? " today" : ""}" style="grid-row:1;grid-column:${c0} / span 3"><span class="n">${d.getMonth()+1}/${d.getDate()}</span>${WD[d.getDay()]}${isT ? '<span class="tag">今日</span>' : ""}${HOLIDAYS[ds] ? `<span class="tag hol">祝日</span>` : ""}</div>`;
+    h += `<div class="h-day${isT ? " today" : ""}" style="grid-row:1;grid-column:${c0} / span 3"><span class="n">${d.getMonth()+1}/${d.getDate()}</span>${WD[d.getDay()]}${isT ? '<span class="tag">今日</span>' : ""}${HOLIDAYS[ds] ? `<span class="tag hol">祝日</span>` : ""}${closedReason(ds) ? `<span class="tag hol">${esc(closedReason(ds))}</span>` : ""}</div>`;
     ROOMS.forEach((r, ri) => { h += `<div class="h-lane${ri === 0 ? " first" : ""}${isT ? " today" : ""}" style="grid-row:2;grid-column:${c0 + ri}">${r}</div>`; });
   });
-  TIMES.forEach((t, ti) => {
+  // 表の行：表示する日の中で、いちばん早い開始〜いちばん遅い終了
+  const used = shown.flatMap(timesOf), rows = used.length ? ALL_TIMES.filter(t => t >= used.reduce((a,b) => a < b ? a : b) && t <= used.reduce((a,b) => a > b ? a : b)) : WEEKDAY_TIMES;
+  rows.forEach((t, ti) => {
     const row = ti + 3, half = t.endsWith("30");
     h += `<div class="t${half ? " half" : ""}${shown.every(ds => isPast(ds, t)) ? " past" : ""}" style="grid-row:${row};grid-column:1">${half ? ":30" : timeLabel(t)}</div>`;
     shown.forEach((ds, di) => {
@@ -462,6 +494,7 @@ function render(){
       ROOMS.forEach((_, ri) => {
         const k = slotKey(ri, t), b = day[k], id = `${ds}|${k}`, col = 2 + di * 3 + ri;
         const cls = `slot${half ? "" : " hour"}${ri === 0 ? " first" : ""}${isT ? " todaycol" : ""}`;
+        if (!b && !timesOf(ds).includes(t)) { h += `<div class="${cls} off" style="grid-row:${row};grid-column:${col}"><span class="none"></span></div>`; return; }
         if (b) {
           const run = runOf(ds, k);
           if (run[0] !== k) return;                 // まとめた予約の2つ目以降は描かない
@@ -482,10 +515,14 @@ function render(){
     });
   });
   // 今の時刻の線（今日が表示されていて、練習時間中のとき）
-  const ti = shown.indexOf(todayS), nm = nowMin(), s0 = tMin(TIMES[0]), e0 = tMin(TIMES[TIMES.length-1]) + 30;
-  if (ti >= 0 && nm >= s0 && nm < e0) {
-    const idx = Math.floor((nm - s0) / 30), frac = ((nm - s0) % 30) / 30 * 100;
+  const ti = shown.indexOf(todayS), tt = timesOf(todayS), nm = nowMin();
+  if (ti >= 0 && tt.length && nm >= tMin(tt[0]) && nm < tMin(tt[tt.length-1]) + 30) {
+    const r0 = tMin(rows[0]), idx = Math.floor((nm - r0) / 30), frac = ((nm - r0) % 30) / 30 * 100;
     h += `<div class="nowline" style="grid-row:${idx + 3};grid-column:${2 + ti * 3} / span 3;--at:${frac}%" aria-hidden="true"></div>`;
+  }
+  if (shown.length === 1 && closedReason(shown[0])) {
+    const d = parseDate(shown[0]);
+    h = `<div class="h-day" style="grid-row:1;grid-column:1 / -1"><span class="n">${d.getMonth()+1}/${d.getDate()}</span>${WD[d.getDay()]}</div><div class="closedmsg" style="grid-row:2;grid-column:1 / -1">${esc(closedReason(shown[0]))}</div>`;
   }
   grid.innerHTML = h;
 
@@ -545,8 +582,8 @@ function pick(id){
   if (selected.has(id)) { selected.delete(id); lastPick = null; render(); return; }
   // 同じ日・同じ場所の続きなら、間の空き枠もまとめて選ぶ
   if (lastPick && lastPick.date === date && roomOf(lastPick.slot) === roomOf(slot) && selected.has(`${lastPick.date}|${lastPick.slot}`)) {
-    const a = TIMES.indexOf(timeOf(lastPick.slot)), b = TIMES.indexOf(timeOf(slot)), r = roomOf(slot);
-    const [s, e] = a < b ? [a, b] : [b, a], between = TIMES.slice(s, e+1).map(t => slotKey(r, t));
+    const a = ALL_TIMES.indexOf(timeOf(lastPick.slot)), b = ALL_TIMES.indexOf(timeOf(slot)), r = roomOf(slot);
+    const [s, e] = a < b ? [a, b] : [b, a], between = ALL_TIMES.slice(s, e+1).map(t => slotKey(r, t));
     if (between.every(k => !(bookings[date] || {})[k] && canBook(date, timeOf(k)))) {
       between.forEach(k => selected.set(`${date}|${k}`, {date, slot: k}));
       lastPick = null; render(); return;
@@ -580,7 +617,7 @@ $("days").addEventListener("touchend", e => {
 }, {passive:true});
 $("prev").onclick = () => { weekOffset = Math.max(0, weekOffset-1); dayTab = null; render(); };
 $("next").onclick = () => { weekOffset = Math.min(weekLimit(), weekOffset+1); dayTab = null; render(); };
-$("today").onclick = () => { weekOffset = 0; (function(){ const d = new Date(), wd = d.getDay(); if (wd === 0 || wd === 6 || (wd === 5 && dayOver(dateStr(d)))) weekOffset = 1; })(); dayTab = null; render(); };
+$("today").onclick = () => { weekOffset = firstWeek(); dayTab = null; render(); };
 $("selClear").onclick = () => { selected.clear(); lastPick = null; render(); };
 $("selGo").onclick = openBooking;
 $("cancel").onclick = () => $("dlg").close();
@@ -613,14 +650,14 @@ $("teamSel").onchange = () => { $("teamFreeWrap").hidden = $("teamSel").value !=
 /** 選んだ枠を「日・場所」ごとに続きの時間でまとめた表示用リスト */
 function groupSelected(list){
   const g = {};
-  list.forEach(x => { const key = x.date + "|" + roomOf(x.slot); (g[key] = g[key] || []).push(TIMES.indexOf(timeOf(x.slot))); });
+  list.forEach(x => { const key = x.date + "|" + roomOf(x.slot); (g[key] = g[key] || []).push(ALL_TIMES.indexOf(timeOf(x.slot))); });
   const out = [];
   Object.keys(g).sort().forEach(key => {
     const [ds, r] = key.split("|"), idx = g[key].sort((a,b) => a-b);
     let s = idx[0], p = idx[0];
     for (let i = 1; i <= idx.length; i++) {
       if (i < idx.length && idx[i] === p + 1) { p = idx[i]; continue; }
-      out.push(`${dateLabel(ds)} ${rangeLabel(slotKey(r, TIMES[s]), slotKey(r, TIMES[p]))}`);
+      out.push(`${dateLabel(ds)} ${rangeLabel(slotKey(r, ALL_TIMES[s]), slotKey(r, ALL_TIMES[p]))}`);
       if (i < idx.length) { s = p = idx[i]; }
     }
   });
@@ -732,7 +769,7 @@ $("dayBlockForm").addEventListener("submit", async e => {
   const ds = $("blockDate").value, reason = ($("blockReason").value.trim() || "使用不可").slice(0, 40);
   if (!ds) { alert("日付を選んでください。"); return; }
   const day = bookings[ds] || {}, updates = {}, list = [];
-  ROOMS.forEach((_, r) => TIMES.forEach(t => { const k = slotKey(r, t); if (!day[k]) { updates[`bookings/${ds}/${k}`] = { team: reason, person: "公式", uid: user.uid, kind: "block", createdAt: fb.serverTimestamp() }; list.push({date: ds, slot: k}); } }));
+  ROOMS.forEach((_, r) => timesOf(ds).forEach(t => { const k = slotKey(r, t); if (!day[k]) { updates[`bookings/${ds}/${k}`] = { team: reason, person: "公式", uid: user.uid, kind: "block", createdAt: fb.serverTimestamp() }; list.push({date: ds, slot: k}); } }));
   if (!list.length) { alert("空いている枠がありません。"); return; }
   if (!confirm(`${dateLabel(ds)} の空いている${list.length}枠を「${reason}」で使用不可にしますか？`)) return;
   addLog(updates, "使用不可（1日）", list, reason, "公式");
