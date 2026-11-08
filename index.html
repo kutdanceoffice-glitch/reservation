@@ -15,7 +15,7 @@
 // LINEのブラウザではGoogleログインができないので、ふつうのブラウザで開き直す
 (function(){
   var ua = navigator.userAgent || "";
-  if (/\bLine\//i.test(ua) && !/[?&]openExternalBrowser=1/.test(location.search)) {
+  if (window.top === window && /\bLine\//i.test(ua) && !/[?&]openExternalBrowser=1/.test(location.search)) {
     location.replace(location.pathname + (location.search ? location.search + "&" : "?") + "openExternalBrowser=1" + location.hash);
   }
 })();
@@ -57,6 +57,8 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.embed .brand h1{display:none}
+.embed .top{padding-top:10px}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-text-size-adjust:100%}
 body{max-width:1280px;margin:0 auto;padding:0 16px 120px}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -389,6 +391,11 @@ const CREW = {
   5:[[18,0,"ヨジャ"],[18,2,"ブレイク"],[19,0,"ナムジャ"],[19,1,"ブレイク"],[19,2,"ヨジャ"],[20,2,"ナムジャ"],[21,0,"ガールズ"]]
 };
 
+/* ============ 運営アプリの中に表示されているとき（?embed=1） ============ */
+// ログインは運営アプリのログイン（同じ Google ログイン）を使う。ここのログインボタンはアプリのログインを呼ぶ。
+const EMBED = /[?&]embed=1/.test(location.search) && window.parent !== window;
+if (EMBED) document.documentElement.classList.add("embed");
+
 /* ============ 状態 ============ */
 let fb = null;               // Firebase の関数
 let db = null, auth = null, user = null;
@@ -555,6 +562,7 @@ function renderUser(){
   const u = $("user");
   if (!fb) { u.innerHTML = `<span class="muted">接続中…</span>`; return; }
   if (!user) { u.innerHTML = `<button class="btn primary" id="login">Googleでログイン</button>`; $("login").onclick = login; return; }
+  if (EMBED) { u.innerHTML = `${isAdmin() ? '<span class="badge">公式</span>' : ""}<span>${esc(myName())}</span>`; return; }   // ログアウトはアプリ右上から
   u.innerHTML = `${isAdmin() ? '<span class="badge">公式</span>' : ""}<span>${esc(myName())}</span><button class="btn small ghost" id="logout">ログアウト</button>`;
   $("logout").onclick = () => fb.signOut(auth);
 }
@@ -628,6 +636,7 @@ $("cancel").onclick = () => $("dlg").close();
 $("infoClose").onclick = () => $("info").close();
 
 async function login(){
+  if (EMBED) { try { if (window.parent.appLogin) { window.parent.appLogin(); return; } } catch (e) {} }
   if (!fb) return;
   try {
     await fb.signInWithPopup(auth, new fb.GoogleAuthProvider());
