@@ -34,6 +34,7 @@
   --today:#f3f3f3; --tag:#e2e2e2; --tag-ink:#383838;
   --danger:#383838; --danger-soft:#f3f3f3; --ok:#e8e8e8; --ok-ink:#383838;
   --primary:#e8e8e8; --primary-ink:#2e2e2e; --primary-line:#bdbdbd;
+  --dialog:#ffffff; --field:#f4f4f4;
   --num:"Barlow Condensed","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --body:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
   --row:46px;
@@ -50,6 +51,7 @@
     --today:#141414; --tag:#2e2e2e; --tag-ink:#d0d0d0;
     --danger:#cccccc; --danger-soft:#1a1a1a; --ok:#2a2a2a; --ok-ink:#d6d6d6;
     --primary:#2a2a2a; --primary-ink:#dcdcdc; --primary-line:#5a5a5a;
+    --dialog:#161616; --field:#202020;
     color-scheme: dark;
   }
 }
@@ -175,12 +177,12 @@ details summary{cursor:pointer;font-weight:700}
 .footer{color:var(--faint);font-size:.76rem;text-align:center;padding:18px}
 
 /* ===== ダイアログ ===== */
-dialog{border:0;border-radius:20px;width:min(460px,calc(100% - 24px));padding:22px;box-shadow:0 24px 80px #0005;background:var(--surface);color:var(--ink)}
+dialog{border:0;border-radius:20px;width:min(460px,calc(100% - 24px));padding:22px;box-shadow:0 24px 80px #0005;background:var(--dialog);color:var(--ink);outline:1px solid var(--line)}
 dialog::backdrop{background:#000000b3}
 dialog h2{margin:0 0 12px;font-size:1.15rem}
 form{display:grid;gap:14px}
 label{display:grid;gap:6px;font-size:.88rem;font-weight:600}
-input,select,textarea{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--raise);width:100%;font-weight:400;font-size:16px}
+input,select,textarea{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--field);width:100%;font-weight:400;font-size:16px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips span{background:var(--sel);color:var(--sel-ink);border-radius:10px;padding:5px 10px;font-size:.84rem;font-weight:600}
 .radio{display:flex;gap:14px;flex-wrap:wrap}
@@ -734,7 +736,7 @@ function openInfo(id){
   $("infoDel").hidden = !(mine || isAdmin());
   $("infoDel").textContent = run.length > 1 ? `取り消す（${run.length}枠）` : "取り消す";
   $("infoSave").hidden = !isAdmin();
-  $("info").showModal();
+  $("info").showModal(); $("infoClose").focus();
 }
 $("infoDel").onclick = async () => {
   const {ds, run, b} = infoTarget;
