@@ -119,8 +119,10 @@ button{cursor:pointer}
 .slot.first{border-left:1px solid var(--line)}
 .slot.off{background:var(--raise)}
 .closedmsg{padding:28px 16px;text-align:center;color:var(--muted);font-weight:600}
-.grid.dense .s{padding:3px 4px}
-.grid.dense .s .team{font-size:.74rem;overflow-wrap:anywhere;word-break:normal}
+.grid.dense .slot{padding:2px}
+.grid.dense .s{padding:3px;min-height:calc(var(--row) - 4px)}
+.grid.dense .s .team{font-size:.68rem;letter-spacing:-.04em;overflow-wrap:anywhere;word-break:normal}
+@media (max-width:1279px){.grid.dense .s{padding:3px 2px}.grid.dense .s .team{font-size:.6rem}}
 .grid.dense .s .who{font-size:.66rem}
 .grid.dense .s .when{font-size:.74rem}
 .grid.dense .h-lane{font-size:.72rem}
@@ -770,6 +772,7 @@ $("dayBlockForm").addEventListener("submit", async e => {
   if (!ds) { alert("日付を選んでください。"); return; }
   const day = bookings[ds] || {}, updates = {}, list = [];
   ROOMS.forEach((_, r) => timesOf(ds).forEach(t => { const k = slotKey(r, t); if (!day[k]) { updates[`bookings/${ds}/${k}`] = { team: reason, person: "公式", uid: user.uid, kind: "block", createdAt: fb.serverTimestamp() }; list.push({date: ds, slot: k}); } }));
+  if (!timesOf(ds).length) { alert(`${dateLabel(ds)} はもともと使えない日です。`); return; }
   if (!list.length) { alert("空いている枠がありません。"); return; }
   if (!confirm(`${dateLabel(ds)} の空いている${list.length}枠を「${reason}」で使用不可にしますか？`)) return;
   addLog(updates, "使用不可（1日）", list, reason, "公式");
