@@ -8,8 +8,8 @@
 <meta property="og:title" content="D-kuts 練習場所予約">
 <meta property="og:description" content="手前・真ん中・奥の空き状況を見て、そのまま予約できます。">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#f1f1f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23252c44'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
 <script>
 // LINEのブラウザではGoogleログインができないので、ふつうのブラウザで開き直す
@@ -26,14 +26,14 @@
 <style>
 /* ===== 色と文字（ライト） ===== */
 :root{
-  --bg:#f1f1f1; --surface:#ffffff; --raise:#f6f6f6; --ink:#1c1c1c; --muted:#666666; --faint:#a3a3a3; --line:#e0e0e0;
-  --free:#ffffff; --free-line:#c2c2c2; --free-ink:#8c8c8c;
-  --taken:#e4e4e4; --taken-ink:#2b2b2b; --crew:#d3d3d3;
+  --bg:#ffffff; --surface:#ffffff; --raise:#f4f4f4; --ink:#383838; --muted:#6b6b6b; --faint:#a6a6a6; --line:#e3e3e3;
+  --free:#ffffff; --free-line:#c4c4c4; --free-ink:#8c8c8c;
+  --taken:#e9e9e9; --taken-ink:#383838; --crew:#dcdcdc;
   --accent:#2457e6; --mine:#2457e6; --mine-ink:#ffffff;
-  --sel:#e9eefc; --sel-line:#2457e6; --sel-ink:#1a42b3;
-  --today:#ebebeb; --tag:#1c1c1c; --tag-ink:#ffffff;
-  --danger:#1c1c1c; --danger-soft:#ececec; --ok:#1c1c1c; --ok-ink:#ffffff;
-  --primary:#1c1c1c; --primary-ink:#ffffff;
+  --sel:#eaf0ff; --sel-line:#2457e6; --sel-ink:#1a42b3;
+  --today:#f0f0f0; --tag:#4a4a4a; --tag-ink:#ffffff;
+  --danger:#383838; --danger-soft:#f0f0f0; --ok:#4a4a4a; --ok-ink:#ffffff;
+  --primary:#4a4a4a; --primary-ink:#ffffff;
   --num:"Barlow Condensed","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --body:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
   --row:46px;
@@ -42,14 +42,14 @@
 /* ===== ダーク ===== */
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#121212; --surface:#1a1a1a; --raise:#212121; --ink:#ececec; --muted:#a0a0a0; --faint:#686868; --line:#2d2d2d;
-    --free:#1a1a1a; --free-line:#4d4d4d; --free-ink:#8f8f8f;
-    --taken:#2b2b2b; --taken-ink:#e2e2e2; --crew:#363636;
-    --accent:#6f97ff; --mine:#6f97ff; --mine-ink:#0e0e0e;
-    --sel:#1b2238; --sel-line:#6f97ff; --sel-ink:#c3d2ff;
-    --today:#232323; --tag:#ececec; --tag-ink:#121212;
-    --danger:#ececec; --danger-soft:#262626; --ok:#ececec; --ok-ink:#121212;
-    --primary:#ececec; --primary-ink:#121212;
+    --bg:#000000; --surface:#000000; --raise:#121212; --ink:#cccccc; --muted:#8f8f8f; --faint:#5c5c5c; --line:#262626;
+    --free:#000000; --free-line:#4a4a4a; --free-ink:#8a8a8a;
+    --taken:#222222; --taken-ink:#cccccc; --crew:#2c2c2c;
+    --accent:#6f97ff; --mine:#6f97ff; --mine-ink:#000000;
+    --sel:#111a33; --sel-line:#6f97ff; --sel-ink:#b8c9ff;
+    --today:#171717; --tag:#b5b5b5; --tag-ink:#000000;
+    --danger:#cccccc; --danger-soft:#1a1a1a; --ok:#b5b5b5; --ok-ink:#000000;
+    --primary:#b5b5b5; --primary-ink:#000000;
     color-scheme: dark;
   }
 }
