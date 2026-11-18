@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>フォーメーション</title>
+<style>
+:root{
+  --bg:#FFFFFF; --field:#F4F4F4; --ink:#383838; --muted:#6B6B6B; --line:#E3E3E3; --line2:#CFCFCF;
+  --accent:#111111; --accent-ink:#FFFFFF; --stage:#FAFAFA; --grid:#E6E6E6; --grid2:#D2D2D2;
+  --block:#E8E8E8; --block-sel:#111111; --block-sel-ink:#FFFFFF; --wave:#C8C8C8; --ghost:#BDBDBD;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000000; --field:#161616; --ink:#CCCCCC; --muted:#8F8F8F; --line:#262626; --line2:#3A3A3A;
+  --accent:#F2F2F2; --accent-ink:#000000; --stage:#0B0B0B; --grid:#1E1E1E; --grid2:#333333;
+  --block:#222222; --block-sel:#F2F2F2; --block-sel-ink:#000000; --wave:#3C3C3C; --ghost:#4A4A4A;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;font-size:16px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.view{display:flex;flex-direction:column;height:100dvh;max-width:720px;margin:0 auto}
+[hidden]{display:none!important}
+
+/* 上の帯 */
+header{display:flex;align-items:center;gap:8px;min-height:56px;padding:0 16px;border-bottom:1px solid var(--line);flex:none}
+header h1{font-size:1.1rem;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{border:0;background:none;padding:8px;margin:-8px 0;border-radius:8px;display:inline-flex;color:var(--ink)}
+.ib:disabled{opacity:.35}
+.ib.on{background:var(--accent);color:var(--accent-ink)}
+
+/* 一覧 */
+.list{list-style:none;margin:0;padding:0 16px;overflow:auto}
+.list li{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.list .t{flex:1;min-width:0}
+.list .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .t small{color:var(--muted);font-size:.8rem}
+.empty{color:var(--muted);padding:24px 16px}
+.btn{border:1px solid var(--line2);background:none;border-radius:8px;padding:8px 16px;font-size:.9rem;display:inline-flex;align-items:center;gap:8px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:4px 8px;font-size:.8rem}
+.btn:disabled{opacity:.4}
+.foot{padding:16px;border-top:1px solid var(--line);display:flex;gap:8px;flex:none}
+
+/* ステージ */
+.stagewrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 16px 0;position:relative}
+#stage{width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+#stage text{font-family:inherit}
+.hint{position:absolute;left:16px;top:8px;font-size:.75rem;color:var(--muted);pointer-events:none}
+
+/* 今の位置と再生 */
+.bar{display:flex;align-items:center;gap:8px;padding:8px 16px;flex:none}
+.bar .now{flex:1;min-width:0;font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .now b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.play{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:inline-flex;align-items:center;justify-content:center}
+.play svg.i{width:20px;height:20px}
+
+/* タイムライン */
+.tl{flex:none;height:136px;overflow-x:auto;overflow-y:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);position:relative;touch-action:pan-x}
+.tlin{position:relative;height:100%}
+#wave{position:absolute;left:0;top:24px;height:48px}
+.ruler{position:absolute;left:0;top:0;height:24px;width:100%}
+.ruler span{position:absolute;top:2px;font-size:.7rem;color:var(--muted);transform:translateX(2px);font-variant-numeric:tabular-nums}
+.ruler i{position:absolute;top:0;bottom:-112px;width:1px;background:var(--grid)}
+.ruler i.e{background:var(--grid2)}
+.blk{position:absolute;top:80px;height:40px;border-radius:8px;background:var(--block);font-size:.75rem;padding:4px 8px;overflow:hidden;white-space:nowrap;touch-action:none}
+.blk.sel{background:var(--block-sel);color:var(--block-sel-ink)}
+.blk .h{position:absolute;right:0;top:0;bottom:0;width:16px;display:flex;align-items:center;justify-content:center}
+.blk .h:after{content:"";width:2px;height:16px;border-radius:1px;background:currentColor;opacity:.5}
+.tr{position:absolute;top:96px;height:8px;border-top:1px dashed var(--line2)}
+#head{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none}
+
+/* 選んだフォーメーションの操作 */
+.ops{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));flex:none}
+.ops .btn{white-space:nowrap}
+.ops .sep{width:1px;height:24px;background:var(--line);flex:none}
+.step{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.step b{color:var(--ink);font-weight:600;min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
+.step button{border:1px solid var(--line2);background:none;border-radius:8px;width:32px;height:32px;padding:0}
+
+/* シート */
+dialog{border:0;padding:0;background:var(--bg);color:var(--ink);width:min(560px,100vw);max-height:88dvh;border-radius:16px 16px 0 0;margin:auto auto 0;box-shadow:0 0 0 1px var(--line)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.sh{display:flex;align-items:center;gap:8px;padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+.sh h2{font-size:1rem;margin:0;flex:1}
+.sb{padding:8px 16px 24px;overflow:auto}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.row label{flex:1;font-size:.9rem;min-width:8em}
+.row input[type=number],.row input[type=text],.row select{width:96px;padding:8px;border:1px solid var(--line2);border-radius:8px;background:var(--field)}
+.row input[type=text].w{flex:1;width:auto}
+.note{font-size:.8rem;color:var(--muted);margin:8px 0}
+h3{font-size:.85rem;margin:24px 0 0;color:var(--muted);font-weight:600}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent;padding:0}
+.sw.on{border-color:var(--ink)}
+.dot{width:24px;height:24px;border-radius:50%;flex:none}
+textarea{width:100%;min-height:80px;padding:8px;border:1px solid var(--line2);border-radius:8px;background:var(--field)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);padding:8px 16px;border-radius:8px;font-size:.85rem;z-index:20;pointer-events:none}
+</style>
+</head>
+<body>
+
+<!-- 一覧 -->
+<section class="view" id="vList">
+  <header><h1>フォーメーション</h1></header>
+  <ul class="list" id="works"></ul>
+  <p class="empty" id="noWorks" hidden>まだありません。「新しく作る」から始めます。データはこのスマホの中だけに保存されます。</p>
+  <div class="foot">
+    <button class="btn pri" id="newWork"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新しく作る</button>
+    <button class="btn" id="importBtn">ファイルから読み込む</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+</section>
+
+<!-- 編集 -->
+<section class="view" id="vEdit" hidden>
+  <header>
+    <button class="ib" id="back" aria-label="一覧に戻る"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <h1 id="title"></h1>
+    <button class="ib" id="undo" aria-label="元に戻す"><svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+    <button class="ib" id="openPeople" aria-label="メンバー"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14a6.5 6.5 0 013.5 6"/></svg></button>
+    <button class="ib" id="openSettings" aria-label="設定"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+  </header>
+
+  <div class="stagewrap">
+    <svg id="stage" aria-label="ステージ"></svg>
+    <p class="hint" id="hint"></p>
+  </div>
+
+  <div class="bar">
+    <button class="play" id="play" aria-label="再生"></button>
+    <p class="now" id="now"></p>
+    <button class="ib" id="tPath" aria-label="移動の線を表示"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 17c6-1 4-9 10-10" stroke-dasharray="2 3"/></svg></button>
+    <button class="ib" id="tMark" aria-label="バミリを置く"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="ib" id="pickAudio" aria-label="曲を選ぶ"><svg class="i" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button>
+    <input type="file" id="audioFile" accept="audio/*" hidden>
+  </div>
+
+  <div class="tl" id="tl">
+    <div class="tlin" id="tlin">
+      <div class="ruler" id="ruler"></div>
+      <canvas id="wave"></canvas>
+      <div id="blocks"></div>
+      <div id="head"></div>
+    </div>
+  </div>
+
+  <div class="ops">
+    <button class="btn sm" id="addForm"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>追加</button>
+    <button class="btn sm" id="dupForm">複製</button>
+    <button class="btn sm" id="noteForm">メモ</button>
+    <button class="btn sm" id="delForm">削除</button>
+    <span class="step">開始<button id="stM" aria-label="開始を1拍前に">−</button><b id="stV"></b><button id="stP" aria-label="開始を1拍後に">＋</button></span>
+    <span class="step">長さ<button id="lnM" aria-label="1拍短く">−</button><b id="lnV"></b><button id="lnP" aria-label="1拍長く">＋</button></span>
+    <span class="step">拡大<button id="zM" aria-label="縮小">−</button><button id="zP" aria-label="拡大">＋</button></span>
+  </div>
+</section>
+
+<!-- 設定 -->
+<dialog id="dSet">
+  <div class="sh"><h2>設定</h2><button class="ib" data-close aria-label="閉じる"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="sb">
+    <div class="row"><label for="sName">名前</label><input type="text" class="w" id="sName" maxlength="40"></div>
+    <h3>ステージ</h3>
+    <div class="row"><label for="sW">横幅（m）</label><input type="number" id="sW" min="2" max="40" step="0.5"></div>
+    <div class="row"><label for="sD">奥行き（m）</label><input type="number" id="sD" min="2" max="30" step="0.5"></div>
+    <div class="row"><label for="sStep">バミリの間隔</label><select id="sStep"><option value="0.5">0.5m</option><option value="1">1m</option><option value="1.5">1.5m</option><option value="2">2m</option></select></div>
+    <div class="row"><label for="sSnap">置いた位置をそろえる</label><select id="sSnap"><option value="0">そろえない</option><option value="0.25">0.25m</option><option value="0.5">0.5m</option><option value="1">1m</option></select></div>
+    <p class="note">番号は前の端に、真ん中を0として左右に振ります。下が客席です。</p>
+    <h3>曲とカウント</h3>
+    <div class="row"><label for="sBpm">テンポ（BPM）</label><input type="number" id="sBpm" min="40" max="240" step="0.1"></div>
+    <div class="row"><label>テンポをタップで測る</label><button class="btn sm" id="tap">拍に合わせて押す</button></div>
+    <div class="row"><label for="sOff">1カウント目の位置（秒）</label><input type="number" id="sOff" min="0" step="0.01"></div>
+    <div class="row"><label>いまの再生位置を1カウント目にする</label><button class="btn sm" id="setOff">合わせる</button></div>
+    <p class="note" id="audioNote"></p>
+    <h3>データ</h3>
+    <div class="row"><label>ファイルに保存（ほかのスマホに移すとき）</label><button class="btn sm" id="export">保存</button></div>
+    <div class="row"><label>このフォーメーションを消す</label><button class="btn sm" id="delWork">消す</button></div>
+  </div>
+</dialog>
+
+<!-- メンバー -->
+<dialog id="dPeople">
+  <div class="sh"><h2>メンバー</h2><button class="ib" data-close aria-label="閉じる"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="sb">
+    <div id="people"></div>
+    <div class="row"><input type="text" class="w" id="pNew" maxlength="12" placeholder="名前（改行やカンマで何人でも）"><button class="btn sm pri" id="pAdd">追加</button></div>
+    <p class="note">追加した人は、すべてのフォーメーションの前のほうに並びます。</p>
+  </div>
+</dialog>
+
+<!-- メモ -->
+<dialog id="dNote">
+  <div class="sh"><h2 id="noteTitle">メモ</h2><button class="ib" data-close aria-label="閉じる"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="sb">
+    <div class="row"><label for="nName">フォーメーションの名前</label><input type="text" class="w" id="nName" maxlength="20"></div>
+    <p class="note">振りのきっかけや注意など</p>
+    <textarea id="nText" maxlength="500"></textarea>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+/* ================= データ ================= */
+const KEY = "formation.works.v1";
+const COLORS = ["#8A8A8A","#C0504D","#D98C3F","#C9B03A","#5E9E5A","#4A86B8","#7B68B0","#C26A9A"];
+const $ = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clone = o => JSON.parse(JSON.stringify(o));
+function loadAll(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; } }
+function saveAll(){ try { localStorage.setItem(KEY, JSON.stringify(works)); } catch(e){ toast("保存できませんでした（容量がいっぱいかもしれません）"); } }
+let works = loadAll();
+let W = null;            // 編集中
+let selF = null;         // 選んでいるフォーメーションのid
+let undoStack = [];
+
+function newWork(){
+  const d = [["A",-2,2],["B",0,2],["C",2,2],["D",-1,3.5],["E",1,3.5]];
+  const dancers = d.map(([n],i) => ({id:uid(), name:n, color:COLORS[0]}));
+  const pos = {}; dancers.forEach((p,i) => pos[p.id] = [d[i][1], d[i][2]]);
+  return { id:uid(), name:"新しいフォーメーション", updated:Date.now(),
+    stage:{w:10, d:6, step:1, snap:0.5}, bpm:120, offset:0, audioName:"",
+    dancers, marks:[], forms:[{id:uid(), name:"", start:0, len:8, pos, note:""}] };
+}
+function commit(){ W.updated = Date.now(); const i = works.findIndex(w => w.id === W.id); if (i < 0) works.unshift(W); else works[i] = W; saveAll(); }
+function snapshot(){ undoStack.push(JSON.stringify(W)); if (undoStack.length > 60) undoStack.shift(); $("undo").disabled = false; }
+function change(fn){ snapshot(); fn(); commit(); renderAll(); }
+
+/* ================= 拍と時間 ================= */
+const spb = () => 60 / (W.bpm || 120);
+const beatToSec = b => W.offset + b * spb();
+const secToBeat = s => (s - W.offset) / spb();
+const countLabel = b => { const n = Math.floor(b + 1e-6); const e = Math.floor(n / 8) + 1, c = ((n % 8) + 8) % 8 + 1; return n < 0 ? "前奏" : `${e}-${c}`; };
+const sortedForms = () => W.forms.slice().sort((a,b) => a.start - b.start);
+const formEnd = f => f.start + f.len;
+const lastBeat = () => Math.max(...W.forms.map(formEnd));
+
+/** 拍 b の時点の位置（移動中はなめらかに動く） */
+function positionsAt(b){
+  const fs = sortedForms(); const out = {};
+  let cur = fs[0], next = null, t = 0;
+  for (let i = 0; i < fs.length; i++){
+    const f = fs[i];
+    if (b >= f.start && b < formEnd(f)) { cur = f; next = null; break; }
+    if (b >= formEnd(f) && fs[i+1] && b < fs[i+1].start) { cur = f; next = fs[i+1]; t = (b - formEnd(f)) / (fs[i+1].start - formEnd(f)); break; }
+    if (b >= formEnd(f)) cur = f;
+  }
+  const e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+  W.dancers.forEach(p => {
+    const a = cur.pos[p.id] || [0,1]; const z = next ? (next.pos[p.id] || a) : a;
+    out[p.id] = [a[0] + (z[0]-a[0]) * e, a[1] + (z[1]-a[1]) * e];
+  });
+  return { pos: out, form: next ? null : cur, from: next ? cur : null, to: next };
+}
+
+/* ================= 再生 ================= */
+const audio = new Audio(); let audioUrl = null, peaks = null, duration = 0;
+let playing = false, beat = 0, clockStart = 0, clockBeat = 0;
+function setBeat(b){ beat = Math.max(-8, b); if (audio.src && !playing) { try { audio.currentTime = Math.max(0, beatToSec(beat)); } catch(e){} } }
+function play(){
+  if (playing) { stop(); return; }
+  playing = true;
+  if (beat >= lastBeat()) beat = Math.min(0, sortedForms()[0].start);
+  if (audio.src) { audio.currentTime = Math.max(0, beatToSec(beat)); audio.play().catch(()=>{ toast("曲を再生できませんでした"); stop(); }); }
+  clockStart = performance.now(); clockBeat = beat;
+  renderPlay(); requestAnimationFrame(tick);
+}
+function stop(){ playing = false; audio.pause(); renderPlay(); renderStage(); renderNow(); }
+function tick(){
+  if (!playing) return;
+  if (audio.src && !audio.paused) beat = secToBeat(audio.currentTime);
+  else if (!audio.src) beat = clockBeat + (performance.now() - clockStart) / 1000 / spb();
+  const end = audio.src && duration ? secToBeat(duration) : lastBeat() + 2;
+  if (beat >= end) { beat = end; stop(); return; }
+  renderStage(); renderNow(); placeHead(true);
+  requestAnimationFrame(tick);
+}
+audio.addEventListener("ended", () => { if (playing) stop(); });
+
+$("audioFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  if (audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = URL.createObjectURL(f); audio.src = audioUrl;
+  change(() => { W.audioName = f.name; });
+  peaks = null; duration = 0;
+  try {
+    const buf = await f.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ab = await ctx.decodeAudioData(buf); ctx.close && ctx.close();
+    duration = ab.duration;
+    const ch = ab.getChannelData(0), per = Math.floor(ab.sampleRate / 50);   // 1秒に50本
+    peaks = new Float32Array(Math.ceil(ch.length / per));
+    for (let i = 0; i < peaks.length; i++){ let m = 0; for (let j = i*per, k = Math.min(ch.length, j+per); j < k; j += 4){ const v = Math.abs(ch[j]); if (v > m) m = v; } peaks[i] = m; }
+  } catch(err){ console.warn(err); audio.addEventListener("loadedmetadata", () => { duration = audio.duration; renderTimeline(); }, {once:true}); }
+  renderTimeline(); toast("曲を読み込みました");
+  e.target.value = "";
+});
+$("pickAudio").onclick = () => $("audioFile").click();
+
+/* ================= ステージ ================= */
+const svg = $("stage"); const NS = "http://www.w3.org/2000/svg";
+const PAD = 0.6;   // ステージのまわりの余白（m）
+let showPath = false, markMode = false;
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+// 座標：x は真ん中0（右が＋＝上手）、y は前の端0（奥が＋）。画面では客席が下。
+const sx = x => x; const sy = y => -y;
+function renderStage(){
+  const {w, d, step} = W.stage;
+  svg.setAttribute("viewBox", `${-w/2 - PAD} ${-d - PAD*0.6} ${w + PAD*2} ${d + PAD*1.6}`);
+  svg.innerHTML = "";
+  const g = el("g", {}, svg);
+  el("rect", {x:-w/2, y:-d, width:w, height:d, fill:"var(--stage)", stroke:"var(--line2)", "stroke-width":0.03}, g);
+  // バミリ（マス目）
+  const every = Math.max(1, Math.ceil(0.8 / step));   // 番号の間が0.8mより狭いときは間引く
+  for (let x = 0, k = 0; x <= w/2 + 1e-6; x += step, k++) [x, -x].forEach((xx, i) => { if (i && x === 0) return;
+    el("line", {x1:xx, y1:-d, x2:xx, y2:0, stroke: x === 0 ? "var(--grid2)" : "var(--grid)", "stroke-width": x === 0 ? 0.035 : 0.02}, g);
+    if (k % every === 0) { const t = el("text", {x:xx, y:0.42, "text-anchor":"middle", "font-size":0.3, fill:"var(--muted)"}, g); t.textContent = String(k); }
+    el("line", {x1:xx, y1:0, x2:xx, y2:0.12, stroke:"var(--muted)", "stroke-width":0.03}, g);
+  });
+  for (let y = step; y < d - 1e-6; y += step) el("line", {x1:-w/2, y1:-y, x2:w/2, y2:-y, stroke:"var(--grid)", "stroke-width":0.02}, g);
+  const lab = (x, y, s, a) => { const t = el("text", {x, y, "text-anchor":a, "font-size":0.28, fill:"var(--muted)"}, g); t.textContent = s; };
+  lab(-w/2, 0.85, "下手", "start"); lab(w/2, 0.85, "上手", "end"); lab(0, 0.85, "客席", "middle");
+  // 自分で置いたバミリ
+  W.marks.forEach((m, i) => { const s = 0.16;
+    const mg = el("g", {"data-mark": i}, g);
+    el("path", {d:`M${m.x-s} ${-m.y-s}L${m.x+s} ${-m.y+s}M${m.x+s} ${-m.y-s}L${m.x-s} ${-m.y+s}`, stroke:"var(--ink)", "stroke-width":0.05, "stroke-linecap":"round"}, mg);
+    if (markMode) el("circle", {cx:m.x, cy:-m.y, r:0.35, fill:"transparent"}, mg);
+  });
+  // 人
+  const st = positionsAt(beat);
+  const editable = !playing && st.form && st.form.id === selF;
+  const sel = W.forms.find(f => f.id === selF);
+  // 移動の線（ひとつ前 → 選んでいるフォーメーション）
+  if (showPath && sel && !playing) {
+    const fs = sortedForms(), i = fs.indexOf(sel), prev = fs[i-1];
+    if (prev) W.dancers.forEach(p => { const a = prev.pos[p.id], z = sel.pos[p.id]; if (!a || !z) return;
+      el("circle", {cx:a[0], cy:-a[1], r:0.26, fill:"none", stroke:"var(--ghost)", "stroke-width":0.03, "stroke-dasharray":"0.08 0.08"}, g);
+      if (Math.hypot(a[0]-z[0], a[1]-z[1]) > 0.05) el("line", {x1:a[0], y1:-a[1], x2:z[0], y2:-z[1], stroke:"var(--ghost)", "stroke-width":0.035, "stroke-dasharray":"0.12 0.1"}, g);
+    });
+  }
+  W.dancers.forEach(p => { const [x, y] = st.pos[p.id];
+    const pg = el("g", {"data-id": p.id, transform:`translate(${x} ${-y})`, style: editable ? "cursor:grab" : ""}, g);
+    el("circle", {r:0.34, fill:p.color, stroke: dragId === p.id ? "var(--ink)" : "none", "stroke-width":0.05}, pg);
+    const t = el("text", {y:0.11, "text-anchor":"middle", "font-size": p.name.length > 1 ? 0.27 : 0.32, "font-weight":700, fill:"#FFFFFF"}, pg); t.textContent = p.name.slice(0, 2);
+    if (p.name.length > 2) { const t2 = el("text", {y:0.66, "text-anchor":"middle", "font-size":0.24, fill:"var(--ink)", stroke:"var(--stage)", "stroke-width":0.06, "paint-order":"stroke"}, pg); t2.textContent = p.name.slice(0, 8); }
+  });
+  $("hint").textContent = markMode ? "押した所にバミリを置きます。もう一度押すと消えます" : playing ? "" : editable ? "人を動かして位置を決めます" : st.form ? "下のフォーメーションを選ぶと動かせます" : "移動中";
+}
+function toStage(ev){ const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return [q.x, -q.y]; }
+const snapv = v => { const s = W.stage.snap; return s ? Math.round(v / s) * s : Math.round(v * 100) / 100; };
+let dragId = null, dragMoved = false;
+svg.addEventListener("pointerdown", ev => {
+  if (playing) return;
+  if (markMode) {
+    const mk = ev.target.closest("[data-mark]");
+    if (mk) { change(() => W.marks.splice(+mk.dataset.mark, 1)); return; }
+    const [x, y] = toStage(ev); const {w, d} = W.stage;
+    if (Math.abs(x) <= w/2 && y >= 0 && y <= d) change(() => W.marks.push({x: snapv(x), y: snapv(y)}));
+    return;
+  }
+  const g = ev.target.closest("[data-id]"); if (!g) return;
+  const st = positionsAt(beat); if (!st.form || st.form.id !== selF) { if (st.form) selectForm(st.form.id); return; }
+  dragId = g.dataset.id; dragMoved = false; snapshot(); svg.setPointerCapture(ev.pointerId); ev.preventDefault(); renderStage();
+});
+svg.addEventListener("pointermove", ev => {
+  if (!dragId) return;
+  const f = W.forms.find(f => f.id === selF); const {w, d} = W.stage;
+  let [x, y] = toStage(ev); x = Math.max(-w/2 - PAD*0.8, Math.min(w/2 + PAD*0.8, snapv(x))); y = Math.max(-0.2, Math.min(d, snapv(y)));
+  f.pos[dragId] = [x, y]; dragMoved = true; renderStage();
+});
+const endDrag = () => { if (!dragId) return; dragId = null; if (dragMoved) commit(); else undoStack.pop(); renderStage(); };
+svg.addEventListener("pointerup", endDrag); svg.addEventListener("pointercancel", endDrag);
+
+/* ================= タイムライン ================= */
+let pxb = 16;   // 1拍の幅
+const tl = $("tl");
+const totalBeats = () => Math.ceil(Math.max(lastBeat() + 16, duration ? secToBeat(duration) + 1 : 0, 64) / 8) * 8;
+const X0 = 16;  // 左の余白
+const bx = b => X0 + b * pxb;
+function renderTimeline(){
+  const tb = totalBeats(), width = bx(tb) + 64;
+  $("tlin").style.width = width + "px";
+  let h = "";
+  for (let b = 0; b <= tb; b++) {
+    if (b % 8 === 0) h += `<i class="e" style="left:${bx(b)}px"></i><span style="left:${bx(b)}px">${b/8+1}</span>`;
+    else if (pxb >= 12 || b % 2 === 0) h += `<i style="left:${bx(b)}px"></i>`;
+    if (pxb >= 24 && b % 8 !== 0) h += `<span style="left:${bx(b)}px;opacity:.6">${b%8+1}</span>`;
+  }
+  $("ruler").innerHTML = h;
+  drawWave(width);
+  const fs = sortedForms(); let bh = "";
+  fs.forEach((f, i) => {
+    const nx = fs[i+1];
+    if (nx && nx.start > formEnd(f)) bh += `<div class="tr" style="left:${bx(formEnd(f))}px;width:${(nx.start-formEnd(f))*pxb}px"></div>`;
+    bh += `<div class="blk${f.id===selF?" sel":""}" data-f="${f.id}" style="left:${bx(f.start)}px;width:${f.len*pxb}px">${i+1}${f.name?" "+esc(f.name):""}${f.id===selF?'<span class="h" data-h="1"></span>':""}</div>`;
+  });
+  $("blocks").innerHTML = bh;
+  placeHead(false); renderOps();
+}
+function drawWave(width){
+  const c = $("wave"), dpr = window.devicePixelRatio || 1, H = 48;
+  c.style.width = width + "px"; c.width = Math.min(width * dpr, 32000); c.height = H * dpr;
+  const x = c.getContext("2d"); x.setTransform(c.width / width, 0, 0, dpr, 0, 0); x.clearRect(0, 0, width, H);
+  if (!peaks) return;
+  x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--wave").trim() || "#999";
+  for (let px = 0; px < width; px++) {
+    const s = beatToSec((px - X0) / pxb); if (s < 0) continue; const i = Math.floor(s * 50); if (i >= peaks.length) break;
+    const v = Math.max(1, peaks[i] * (H - 4)); x.fillRect(px, (H - v) / 2, 1, v);
+  }
+}
+function placeHead(follow){
+  const x = bx(beat); $("head").style.left = x + "px";
+  if (follow && (x < tl.scrollLeft + 40 || x > tl.scrollLeft + tl.clientWidth - 80)) tl.scrollLeft = x - 60;
+}
+// 押した位置へ移動／フォーメーションを選ぶ・動かす
+let tdrag = null;
+$("tlin").addEventListener("pointerdown", ev => {
+  const blk = ev.target.closest(".blk");
+  const r = $("tlin").getBoundingClientRect(); const b = (ev.clientX - r.left - X0) / pxb;
+  if (blk) {
+    const f = W.forms.find(f => f.id === blk.dataset.f);
+    if (f.id !== selF) return;   // 選ぶのは click で（指でのスクロールと区別するため）
+    tdrag = {f, mode: ev.target.dataset.h ? "len" : "move", b0: b, start: f.start, len: f.len, moved:false};
+    blk.setPointerCapture(ev.pointerId); snapshot(); ev.preventDefault(); return;
+  }
+});
+// 押した位置へ移動・フォーメーションを選ぶ（指を動かさずに離したときだけ。スクロールでは動かない）
+$("tlin").addEventListener("click", ev => {
+  if (justDragged) { justDragged = false; return; }
+  const blk = ev.target.closest(".blk");
+  if (blk) { if (blk.dataset.f !== selF) selectForm(blk.dataset.f); return; }
+  const r = $("tlin").getBoundingClientRect(); const b = (ev.clientX - r.left - X0) / pxb;
+  if (playing) stop();
+  setBeat(Math.max(0, Math.round(b * 2) / 2)); renderStage(); renderNow(); placeHead(false);
+});
+let justDragged = false;
+$("tlin").addEventListener("pointermove", ev => {
+  if (!tdrag) return;
+  const r = $("tlin").getBoundingClientRect(); const db = Math.round((ev.clientX - r.left - X0) / pxb - tdrag.b0);
+  const fs = sortedForms(), i = fs.indexOf(tdrag.f), prev = fs[i-1], next = fs[i+1];
+  if (tdrag.mode === "move") { let s = tdrag.start + db; s = Math.max(prev ? formEnd(prev) : 0, s); if (next) s = Math.min(next.start - tdrag.f.len, s); tdrag.f.start = s; }
+  else { let l = Math.max(1, tdrag.len + db); if (next) l = Math.min(next.start - tdrag.f.start, l); tdrag.f.len = l; }
+  tdrag.moved = true; beat = tdrag.f.start; renderTimeline(); renderStage(); renderNow();
+});
+const endT = () => { if (!tdrag) return; if (tdrag.moved) { commit(); justDragged = true; setTimeout(() => justDragged = false, 300); } else undoStack.pop(); tdrag = null; };
+$("tlin").addEventListener("pointerup", endT); $("tlin").addEventListener("pointercancel", endT);
+
+function selectForm(id){ selF = id; const f = W.forms.find(f => f.id === id); if (playing) stop(); setBeat(f.start); renderAll(); const x = bx(f.start); if (x < tl.scrollLeft || x > tl.scrollLeft + tl.clientWidth - 40) tl.scrollLeft = x - 40; }
+
+/* ================= 選んだフォーメーションの操作 ================= */
+function renderOps(){
+  const f = W.forms.find(f => f.id === selF);
+  ["dupForm","noteForm","delForm","stM","stP","lnM","lnP"].forEach(id => $(id).disabled = !f);
+  $("stV").textContent = f ? countLabel(f.start) : "–"; $("lnV").textContent = f ? f.len + "拍" : "–";
+  if (f) { const fs = sortedForms(), i = fs.indexOf(f); $("delForm").disabled = fs.length < 2;
+    $("stM").disabled = f.start <= (fs[i-1] ? formEnd(fs[i-1]) : 0); $("stP").disabled = fs[i+1] && formEnd(f) >= fs[i+1].start; $("lnP").disabled = fs[i+1] && formEnd(f) >= fs[i+1].start; $("lnM").disabled = f.len <= 1; }
+}
+function addAfter(copy){
+  const fs = sortedForms(); const cur = W.forms.find(f => f.id === selF) || fs[fs.length-1];
+  const i = fs.indexOf(cur), next = fs[i+1];
+  let start = formEnd(cur) + 4, len = 8;
+  if (next) { const room = next.start - formEnd(cur); if (room < 2) { toast("次のフォーメーションとの間があいていません"); return; } start = formEnd(cur) + Math.min(4, Math.floor(room/3)); len = Math.max(1, Math.min(8, next.start - start - Math.min(4, Math.floor(room/3)))); }
+  const nf = {id:uid(), name:"", start, len, pos: clone(cur.pos), note: copy ? cur.note : ""};
+  if (copy) nf.name = cur.name;
+  change(() => W.forms.push(nf)); selectForm(nf.id);
+}
+$("addForm").onclick = () => addAfter(false);
+$("dupForm").onclick = () => addAfter(true);
+$("delForm").onclick = () => { const f = W.forms.find(f => f.id === selF); if (!f || W.forms.length < 2) return;
+  const i = sortedForms().indexOf(f) + 1;
+  if (!confirm(`フォーメーション ${i}${f.name ? "（"+f.name+"）" : ""} を消しますか？（元に戻すボタンで戻せます）`)) return;
+  change(() => { W.forms = W.forms.filter(x => x !== f); }); const fs = sortedForms(); selectForm((fs[i-2] || fs[0]).id); };
+const nudge = (k, d) => { const f = W.forms.find(f => f.id === selF); if (!f) return; change(() => { f[k] += d; }); if (k === "start") setBeat(f.start); renderAll(); };
+$("stM").onclick = () => nudge("start", -1); $("stP").onclick = () => nudge("start", 1);
+$("lnM").onclick = () => nudge("len", -1); $("lnP").onclick = () => nudge("len", 1);
+$("zM").onclick = () => { pxb = Math.max(4, pxb / 1.5); renderTimeline(); placeHead(true); };
+$("zP").onclick = () => { pxb = Math.min(60, pxb * 1.5); renderTimeline(); placeHead(true); };
+$("noteForm").onclick = () => { const f = W.forms.find(f => f.id === selF); $("noteTitle").textContent = `フォーメーション ${sortedForms().indexOf(f)+1}`; $("nName").value = f.name; $("nText").value = f.note; snapshot(); $("dNote").showModal(); };
+$("nName").oninput = () => { const f = W.forms.find(f => f.id === selF); f.name = $("nName").value; commit(); renderTimeline(); renderNow(); };
+$("nText").oninput = () => { const f = W.forms.find(f => f.id === selF); f.note = $("nText").value; commit(); renderNow(); };
+
+/* ================= 今の位置の表示・再生ボタン ================= */
+function renderNow(){
+  const st = positionsAt(beat), fs = sortedForms();
+  let s = `<b>${countLabel(beat)}</b>　`;
+  if (st.form) { const f = st.form; s += `フォーメーション ${fs.indexOf(f)+1}${f.name ? " "+esc(f.name) : ""}${f.note ? "｜"+esc(f.note.split("\n")[0]) : ""}`; }
+  else s += `移動中 ${fs.indexOf(st.from)+1} → ${fs.indexOf(st.to)+1}`;
+  $("now").innerHTML = s;
+}
+function renderPlay(){ $("play").innerHTML = playing ? '<svg class="i" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>' : '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>'; $("play").setAttribute("aria-label", playing ? "止める" : "再生"); }
+$("play").onclick = play;
+$("tPath").onclick = () => { showPath = !showPath; $("tPath").classList.toggle("on", showPath); renderStage(); };
+$("tMark").onclick = () => { markMode = !markMode; $("tMark").classList.toggle("on", markMode); renderStage(); };
+$("undo").onclick = () => { const s = undoStack.pop(); if (!s) return; W = JSON.parse(s); if (!W.forms.find(f => f.id === selF)) selF = sortedForms()[0].id; commit(); renderAll(); $("undo").disabled = !undoStack.length; };
+
+/* ================= 設定 ================= */
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => b.closest("dialog").close());
+document.querySelectorAll("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
+$("openSettings").onclick = () => {
+  taps = []; $("tap").textContent = "拍に合わせて押す";
+  $("sName").value = W.name; $("sW").value = W.stage.w; $("sD").value = W.stage.d; $("sStep").value = W.stage.step; $("sSnap").value = W.stage.snap;
+  $("sBpm").value = W.bpm; $("sOff").value = W.offset;
+  $("audioNote").textContent = audio.src ? `曲：${W.audioName}` : W.audioName ? `曲（${W.audioName}）は開くたびに選び直してください。曲がなくてもテンポで再生できます。` : "曲がなくても、テンポに合わせて再生できます。";
+  snapshot(); $("dSet").showModal();
+};
+const num = (id, lo, hi, def) => { const v = parseFloat($(id).value); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def; };
+["sName","sW","sD","sStep","sSnap","sBpm","sOff"].forEach(id => $(id).addEventListener("change", () => {
+  W.name = $("sName").value.trim() || "名前なし";
+  W.stage.w = num("sW", 2, 40, 10); W.stage.d = num("sD", 2, 30, 6); W.stage.step = parseFloat($("sStep").value); W.stage.snap = parseFloat($("sSnap").value);
+  W.bpm = num("sBpm", 40, 240, 120); W.offset = num("sOff", 0, 600, 0);
+  commit(); renderAll();
+}));
+let taps = [];
+$("tap").onclick = () => { const t = performance.now(); taps = taps.filter(x => t - x < 3000); taps.push(t);
+  if (taps.length >= 4) { const iv = (taps[taps.length-1] - taps[0]) / (taps.length - 1); $("sBpm").value = Math.round(60000 / iv * 10) / 10; $("sBpm").dispatchEvent(new Event("change")); $("tap").textContent = `${$("sBpm").value}（続けて押す）`; }
+  else $("tap").textContent = `あと${4 - taps.length}回`; };
+$("setOff").onclick = () => { if (!audio.src) { toast("先に曲を選んでください"); return; } $("sOff").value = Math.round(audio.currentTime * 100) / 100; $("sOff").dispatchEvent(new Event("change")); beat = 0; renderAll(); toast("いまの位置を1カウント目にしました"); };
+$("export").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(W, null, 1)], {type:"application/json"})); a.download = `${W.name}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+$("delWork").onclick = () => { if (!confirm(`「${W.name}」を消しますか？このスマホから消え、元に戻せません。`)) return; works = works.filter(w => w.id !== W.id); saveAll(); $("dSet").close(); showList(); };
+
+/* ================= メンバー ================= */
+function renderPeople(){
+  $("people").innerHTML = W.dancers.map(p => `<div class="row" data-p="${p.id}">
+    <span class="dot" style="background:${p.color}"></span>
+    <input type="text" class="w" value="${esc(p.name)}" maxlength="12" data-pn aria-label="名前">
+    <button class="btn sm" data-pc>色</button><button class="btn sm" data-pd>外す</button></div>
+    <div class="row" data-colors="${p.id}" hidden>${COLORS.map(c => `<button class="sw${c===p.color?" on":""}" style="background:${c}" data-c="${c}" aria-label="色"></button>`).join("")}</div>`).join("") || '<p class="note">まだいません</p>';
+}
+$("openPeople").onclick = () => { snapshot(); renderPeople(); $("dPeople").showModal(); };
+$("people").addEventListener("input", e => { if (!e.target.matches("[data-pn]")) return; const p = W.dancers.find(p => p.id === e.target.closest("[data-p]").dataset.p); p.name = e.target.value.trim() || "?"; commit(); renderStage(); });
+$("people").addEventListener("click", e => {
+  const row = e.target.closest("[data-p]"), crow = e.target.closest("[data-colors]");
+  if (crow && e.target.dataset.c) { W.dancers.find(p => p.id === crow.dataset.colors).color = e.target.dataset.c; commit(); renderPeople(); renderStage(); return; }
+  if (!row) return; const p = W.dancers.find(p => p.id === row.dataset.p);
+  if (e.target.matches("[data-pc]")) { const c = $("people").querySelector(`[data-colors="${p.id}"]`); c.hidden = !c.hidden; }
+  if (e.target.matches("[data-pd]")) { if (!confirm(`${p.name} を外しますか？すべてのフォーメーションから消えます（元に戻すボタンで戻せます）`)) return;
+    W.dancers = W.dancers.filter(x => x !== p); W.forms.forEach(f => delete f.pos[p.id]); commit(); renderPeople(); renderStage(); }
+});
+$("pAdd").onclick = () => {
+  const names = $("pNew").value.split(/[\n,、，]+/).map(s => s.trim()).filter(Boolean); if (!names.length) return;
+  names.forEach((n, k) => { const p = {id:uid(), name:n.slice(0, 12), color:COLORS[0]}; W.dancers.push(p);
+    const i = W.dancers.length - 1, x = ((i % 7) - 3) * 1, y = 0.6 + Math.floor(i / 7) * 0.8;
+    W.forms.forEach(f => f.pos[p.id] = [Math.max(-W.stage.w/2, Math.min(W.stage.w/2, x)), Math.min(W.stage.d, y)]); });
+  $("pNew").value = ""; commit(); renderPeople(); renderStage();
+};
+$("pNew").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("pAdd").click(); });
+
+/* ================= 一覧 ================= */
+function showList(){
+  if (playing) stop();
+  $("vEdit").hidden = true; $("vList").hidden = false;
+  works.sort((a,b) => b.updated - a.updated);
+  $("works").innerHTML = works.map(w => `<li data-w="${w.id}"><span class="t"><b>${esc(w.name)}</b><small>${w.dancers.length}人・${w.forms.length}フォーメーション・${new Date(w.updated).toLocaleDateString("ja-JP")}</small></span><svg class="i" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></li>`).join("");
+  $("noWorks").hidden = works.length > 0;
+}
+function openWork(id){
+  W = works.find(w => w.id === id); undoStack = []; $("undo").disabled = true;
+  if (W.audioName !== "" && audio.src && audioUrl) { /* 同じ曲を続けて使う */ } else { audio.removeAttribute("src"); peaks = null; duration = 0; }
+  selF = sortedForms()[0].id; beat = sortedForms()[0].start; markMode = false; $("tMark").classList.remove("on");
+  $("vList").hidden = true; $("vEdit").hidden = false; tl.scrollLeft = 0; renderAll();
+  if (W.audioName && !audio.src) toast(`曲（${W.audioName}）は右上の音符から選び直してください`);
+}
+$("works").onclick = e => { const li = e.target.closest("[data-w]"); if (li) openWork(li.dataset.w); };
+$("newWork").onclick = () => { const w = newWork(); works.unshift(w); saveAll(); audio.removeAttribute("src"); if (audioUrl) URL.revokeObjectURL(audioUrl); audioUrl = null; openWork(w.id); };
+$("back").onclick = () => { audio.removeAttribute("src"); if (audioUrl) URL.revokeObjectURL(audioUrl); audioUrl = null; showList(); };
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = async e => { const f = e.target.files[0]; if (!f) return;
+  try { const w = JSON.parse(await f.text()); if (!w.forms || !w.dancers || !w.stage) throw 0; w.id = uid(); w.updated = Date.now(); works.unshift(w); saveAll(); showList(); toast("読み込みました"); }
+  catch(err){ toast("このファイルは読み込めませんでした"); } e.target.value = ""; };
+
+/* ================= 共通 ================= */
+function renderAll(){ $("title").textContent = W.name; renderStage(); renderTimeline(); renderNow(); renderPlay(); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+let tt; function toast(m){ let t = document.querySelector(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); } t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2600); }
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (W && !$("vEdit").hidden) renderAll(); });
+window.addEventListener("resize", () => { if (W && !$("vEdit").hidden) renderStage(); });
+showList();
+</script>
+</body>
+</html>
